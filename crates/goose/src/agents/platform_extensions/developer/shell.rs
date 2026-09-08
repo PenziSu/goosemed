@@ -361,9 +361,16 @@ impl ShellTool {
         )
     }
 
+    #[cfg(test)]
     pub async fn shell(&self, params: ShellParams) -> CallToolResult {
-        self.shell_with_cwd(params, None, None, CancellationToken::new())
-            .await
+        let working_dir = tempfile::tempdir().ok();
+        self.shell_with_cwd(
+            params,
+            working_dir.as_ref().map(|dir| dir.path()),
+            None,
+            CancellationToken::new(),
+        )
+        .await
     }
 
     pub async fn shell_with_cwd(
@@ -387,6 +394,13 @@ impl ShellTool {
     ) -> CallToolResult {
         if params.command.trim().is_empty() {
             return Self::error_result("Command cannot be empty.", None);
+        }
+
+        if working_dir.is_none() {
+            return Self::error_result(
+                "Shell requires a project working directory and was refused.",
+                None,
+            );
         }
 
         #[cfg(windows)]
@@ -564,8 +578,16 @@ async fn run_command(
     cancellation_token: CancellationToken,
 ) -> Result<ExecutionOutput, String> {
     let timeout_secs = Some(resolve_shell_timeout(timeout_secs));
+    let working_dir = working_dir
+        .ok_or_else(|| "Shell requires a project working directory".to_string())?
+        .canonicalize()
+        .map_err(|error| format!("Failed to resolve project working directory: {error}"))?;
+    if !working_dir.is_dir() {
+        return Err("Project working directory is not a directory".to_string());
+    }
 
-    let mut command = build_shell_command(command_line, working_dir, login_path, session_id);
+    let mut command =
+        build_shell_command(command_line, Some(&working_dir), login_path, session_id)?;
 
     command.stdout(Stdio::piped());
     command.stderr(Stdio::piped());
@@ -684,7 +706,7 @@ fn build_shell_command(
     working_dir: Option<&std::path::Path>,
     login_path: Option<&str>,
     session_id: Option<&str>,
-) -> tokio::process::Command {
+) -> Result<tokio::process::Command, String> {
     #[cfg(windows)]
     let mut command = {
         let shell = windows_shell();
@@ -711,7 +733,33 @@ fn build_shell_command(
         command
     };
 
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    let mut command = {
+        let shell = unix_shell();
+        let working_dir =
+            working_dir.ok_or_else(|| "Shell requires a project working directory".to_string())?;
+        let profile = macos_shell_sandbox_profile(working_dir)?;
+        let temp_dir = working_dir.join(".goosemed").join("tmp");
+        std::fs::create_dir_all(&temp_dir)
+            .map_err(|error| format!("Failed to create project temp directory: {error}"))?;
+
+        let mut command = tokio::process::Command::new("/usr/bin/sandbox-exec");
+        command
+            .args(["-p", &profile])
+            .arg(shell)
+            .args(unix_shell_command_args(command_line))
+            .current_dir(working_dir)
+            .env("TMPDIR", &temp_dir)
+            .env("TMP", &temp_dir)
+            .env("TEMP", &temp_dir);
+        if let Some(path) = login_path {
+            command.env("PATH", path);
+        }
+        apply_session_environment(&mut command, session_id);
+        command
+    };
+
+    #[cfg(all(not(windows), not(target_os = "macos")))]
     let mut command = {
         let shell = unix_shell();
 
@@ -745,7 +793,49 @@ fn build_shell_command(
     #[cfg(windows)]
     apply_session_environment(&mut command, session_id);
     command.set_no_window();
-    command
+    Ok(command)
+}
+
+#[cfg(target_os = "macos")]
+fn macos_shell_sandbox_profile(working_dir: &std::path::Path) -> Result<String, String> {
+    let working_dir = seatbelt_string_literal(working_dir)?;
+    let readable_system_paths = [
+        "/System",
+        "/Library",
+        "/bin",
+        "/sbin",
+        "/usr",
+        "/opt/homebrew",
+        "/usr/local",
+        "/nix/store",
+        "/private/var/select",
+        "/dev",
+    ]
+    .map(|path| format!("(subpath \"{path}\")"))
+    .join(" ");
+
+    Ok(format!(
+        "(version 1)\n\
+         (deny default)\n\
+         (import \"system.sb\")\n\
+         (allow process*)\n\
+         (allow file-read* {readable_system_paths} (subpath {working_dir}))\n\
+         (allow file-write* (subpath \"/dev\") (subpath {working_dir}))\n\
+         (deny network*)"
+    ))
+}
+
+#[cfg(target_os = "macos")]
+fn seatbelt_string_literal(path: &std::path::Path) -> Result<String, String> {
+    let path = path
+        .to_str()
+        .ok_or_else(|| "Project working directory must be valid UTF-8".to_string())?;
+    let escaped = path
+        .replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r");
+    Ok(format!("\"{escaped}\""))
 }
 
 fn apply_session_environment(command: &mut tokio::process::Command, session_id: Option<&str>) {
@@ -756,7 +846,7 @@ fn apply_session_environment(command: &mut tokio::process::Command, session_id: 
     }
 }
 
-#[cfg(not(windows))]
+#[cfg(all(not(windows), not(target_os = "macos")))]
 fn apply_flatpak_session_environment(
     command: &mut tokio::process::Command,
     session_id: Option<&str>,
@@ -984,6 +1074,7 @@ mod tests {
     #[tokio::test]
     async fn full_live_notification_channel_does_not_change_final_output() {
         let tool = ShellTool::new_for_test().unwrap();
+        let working_dir = tempfile::tempdir().unwrap();
         let (sender, _receiver) = tokio::sync::mpsc::channel(1);
         let result = tool
             .shell_with_cwd_and_emitter(
@@ -991,7 +1082,7 @@ mod tests {
                     command: "printf 'out-1\\nout-2\\n'; printf 'err-1\\nerr-2\\n' >&2".to_string(),
                     timeout_secs: None,
                 },
-                None,
+                Some(working_dir.path()),
                 None,
                 Some(ToolCallNotificationEmitter::new(sender)),
                 CancellationToken::new(),
@@ -1067,7 +1158,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(windows))]
+    #[cfg(all(not(windows), not(target_os = "macos")))]
     #[test]
     fn flatpak_session_environment_is_set_or_unset() {
         for (session_id, expected) in [
@@ -1093,6 +1184,7 @@ mod tests {
     #[tokio::test]
     async fn shell_kills_child_on_cancellation() {
         let tool = ShellTool::new_for_test().unwrap();
+        let working_dir = tempfile::tempdir().unwrap();
         let token = CancellationToken::new();
         let token_clone = token.clone();
 
@@ -1108,7 +1200,7 @@ mod tests {
                     command: "sleep 30".to_string(),
                     timeout_secs: None,
                 },
-                None,
+                Some(working_dir.path()),
                 None,
                 token,
             )
@@ -1378,6 +1470,89 @@ mod tests {
         // The key behavioral guarantee: an omitted timeout no longer means
         // "run forever" — it resolves to the default extension timeout.
         assert!(resolve_shell_timeout(None) > 0);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn macos_profile_denies_network_and_only_writes_to_project() {
+        let profile =
+            macos_shell_sandbox_profile(std::path::Path::new("/tmp/project \"quoted\"")).unwrap();
+
+        assert!(profile.contains("(deny network*)"));
+        assert!(profile.contains("(allow file-write*"));
+        assert!(profile.contains("(subpath \"/tmp/project \\\"quoted\\\"\")"));
+        assert!(!profile.contains("(allow network"));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[tokio::test]
+    async fn macos_shell_reads_and_writes_only_inside_project() {
+        let root = tempfile::tempdir().unwrap();
+        let project = root.path().join("project");
+        std::fs::create_dir(&project).unwrap();
+        let outside = root.path().join("outside.txt");
+        std::fs::write(&outside, "sensitive").unwrap();
+        let tool = ShellTool::new_for_test().unwrap();
+
+        let inside = tool
+            .shell_with_cwd(
+                ShellParams {
+                    command: "printf ok > result.txt && cat result.txt".to_string(),
+                    timeout_secs: None,
+                },
+                Some(&project),
+                None,
+                CancellationToken::new(),
+            )
+            .await;
+        assert_eq!(inside.is_error, Some(false));
+        assert_eq!(
+            std::fs::read_to_string(project.join("result.txt")).unwrap(),
+            "ok"
+        );
+
+        let escape = tool
+            .shell_with_cwd(
+                ShellParams {
+                    command: format!("cat '{}'", outside.display()),
+                    timeout_secs: None,
+                },
+                Some(&project),
+                None,
+                CancellationToken::new(),
+            )
+            .await;
+        assert_eq!(escape.is_error, Some(true));
+        assert!(extract_text(&escape).contains("Operation not permitted"));
+        assert_eq!(std::fs::read_to_string(outside).unwrap(), "sensitive");
+    }
+
+    #[cfg(target_os = "macos")]
+    #[tokio::test]
+    async fn macos_shell_cannot_create_a_network_connection() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let project = tempfile::tempdir().unwrap();
+        let tool = ShellTool::new_for_test().unwrap();
+
+        let result = tool
+            .shell_with_cwd(
+                ShellParams {
+                    command: format!("/usr/bin/curl --max-time 1 http://127.0.0.1:{port}/patient"),
+                    timeout_secs: Some(3),
+                },
+                Some(project.path()),
+                None,
+                CancellationToken::new(),
+            )
+            .await;
+
+        assert_eq!(result.is_error, Some(true));
+        assert!(matches!(
+            listener.accept(),
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock
+        ));
     }
 
     #[cfg(not(windows))]

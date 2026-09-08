@@ -403,7 +403,9 @@ mod tests {
     async fn developer_client_passes_session_id_to_shell_tool() {
         let temp = tempfile::tempdir().unwrap();
         let client = DeveloperClient::new(test_context(temp.path().join("sessions"))).unwrap();
-        let ctx = ToolCallContext::new("session-789".to_owned(), None, None);
+        let working_dir = temp.path().join("workspace");
+        fs::create_dir(&working_dir).unwrap();
+        let ctx = ToolCallContext::new("session-789".to_owned(), Some(working_dir), None);
 
         let result = client
             .call_tool(
