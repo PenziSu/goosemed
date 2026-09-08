@@ -44,15 +44,6 @@ import { defaultSettings, getKeyboardShortcuts } from './utils/settings';
 import * as crypto from 'crypto';
 import * as yaml from 'yaml';
 import windowStateKeeper from 'electron-window-state';
-import {
-  getUpdateAvailable,
-  registerUpdateIpcHandlers,
-  setAutoDownloadDisabled,
-  setTrayRef,
-  setupAutoUpdater,
-  updateTrayMenu,
-} from './utils/autoUpdater';
-import { UPDATES_ENABLED } from './updates';
 import './utils/gitBranchIpc';
 import './utils/recipeHash';
 import type { GooseApp } from './types/apps';
@@ -66,11 +57,6 @@ import {
   isAuthorizedFileAccessRequest,
   readSelectedRecipe,
 } from './desktopFileAccess';
-
-function shouldSetupUpdater(): boolean {
-  // Setup updater if either the flag is enabled OR dev updates are enabled
-  return UPDATES_ENABLED || process.env.ENABLE_DEV_UPDATES === 'true';
-}
 
 // =======================================================================
 // Native menu localization
@@ -1663,8 +1649,14 @@ const createTray = () => {
 
   try {
     tray = new Tray(iconPath);
-    setTrayRef(tray);
-    updateTrayMenu(getUpdateAvailable());
+    tray.setToolTip('GooseMed');
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        { label: 'Show Window', click: showWindow },
+        { type: 'separator' },
+        { label: 'Quit', click: () => app.quit() },
+      ])
+    );
 
     if (process.platform === 'win32') {
       tray.on('click', showWindow);
@@ -1997,10 +1989,6 @@ ipcMain.handle('set-setting', (_event, key: SettingKey, value: unknown) => {
   // Re-register shortcuts if keyboard shortcuts changed
   if (key === 'keyboardShortcuts') {
     registerGlobalShortcuts();
-  }
-
-  if (key === 'disableAutoDownload') {
-    setAutoDownloadDisabled(value as boolean);
   }
 });
 
@@ -2462,8 +2450,6 @@ async function appMain() {
   // Ensure Windows shims are available before any MCP processes are spawned
   await ensureWinShims();
 
-  registerUpdateIpcHandlers();
-
   // Handle microphone permission requests
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
     console.log('Permission requested:', permission);
@@ -2520,22 +2506,6 @@ async function appMain() {
   } else {
     log.info('[Main] Skipping window creation in appMain - open-url already handled launch');
   }
-
-  // Setup auto-updater AFTER window is created and displayed (with delay to avoid blocking)
-  setTimeout(() => {
-    if (shouldSetupUpdater()) {
-      log.info('Setting up auto-updater after window creation...');
-      try {
-        const settings = getSettings();
-        if (settings.disableAutoDownload) {
-          setAutoDownloadDisabled(true);
-        }
-        setupAutoUpdater();
-      } catch (error) {
-        log.error('Error setting up auto-updater:', error);
-      }
-    }
-  }, 2000);
 
   if (process.platform === 'darwin') {
     const dockMenu = Menu.buildFromTemplate([
@@ -2986,11 +2956,6 @@ async function appMain() {
   });
 
   // Handle app restart
-  ipcMain.on('restart-app', () => {
-    app.relaunch();
-    app.exit(0);
-  });
-
   // Handler for getting app version
   ipcMain.on('get-app-version', (event) => {
     event.returnValue = app.getVersion();

@@ -92,15 +92,10 @@ libc = { version = "0.2.182", default-features = false, features = ["std"] }
 
 [features]
 default = [
-    "code-mode",
     "local-inference",
     "aws-providers",
-    "telemetry",
-    "nostr",
-    "otel",
     "rustls-tls",
     "system-keyring",
-    "update",
 ]
 roaming = ["dep:goose-roaming", "dep:qrcode", "dep:fs2", "dep:agent-client-protocol"]
 code-mode = ["goose/code-mode"]
@@ -114,7 +109,7 @@ nostr = ["goose/nostr"]
 otel = ["goose/otel"]
 system-keyring = ["goose/system-keyring"]
 update = ["dep:sigstore-verify", "dep:snap"]
-portable-default = ["rustls-tls", "aws-providers", "telemetry", "otel"]
+portable-default = ["rustls-tls", "aws-providers"]
 # disables the update command
 disable-update = []
 rustls-tls = [

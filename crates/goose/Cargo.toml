@@ -77,7 +77,7 @@ native-tls = [
     "goose-providers/native-tls",
 ]
 system-keyring = ["dep:keyring"]
-portable-default = ["rustls-tls", "aws-providers", "telemetry", "otel"]
+portable-default = ["rustls-tls", "aws-providers"]
 nostr = ["dep:nostr", "dep:nostr-sdk"]
 
 [lints]
