@@ -7,6 +7,8 @@ use rmcp::model::{CallToolResult, ContentBlock};
 use schemars::JsonSchema;
 use serde::Deserialize;
 
+use crate::agents::platform_extensions::workspace::{resolve_workspace_path, PathRequirement};
+
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct TreeParams {
     pub path: String,
@@ -31,16 +33,16 @@ impl TreeTool {
     }
 
     pub fn tree_with_cwd(&self, params: TreeParams, working_dir: Option<&Path>) -> CallToolResult {
-        let path = PathBuf::from(&params.path);
-        let root = if path.is_absolute() {
-            path
-        } else {
-            working_dir
-                .map(Path::to_path_buf)
-                .or_else(|| std::env::current_dir().ok())
-                .unwrap_or_else(|| PathBuf::from("."))
-                .join(path)
-        };
+        let root =
+            match resolve_workspace_path(&params.path, working_dir, PathRequirement::Existing) {
+                Ok(path) => path,
+                Err(error) => {
+                    return CallToolResult::error(vec![ContentBlock::text(format!(
+                        "Refused to list {}: {}",
+                        params.path, error
+                    ))])
+                }
+            };
         self.tree_at(root, params.depth)
     }
 

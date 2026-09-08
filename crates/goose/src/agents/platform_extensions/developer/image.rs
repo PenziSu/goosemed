@@ -1,6 +1,5 @@
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use base64::Engine;
 use image::GenericImageView;
@@ -9,7 +8,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use super::edit::resolve_path;
+use crate::agents::platform_extensions::workspace::{resolve_workspace_path, PathRequirement};
 
 const MAX_IMAGE_BYTES: u64 = 20 * 1024 * 1024;
 
@@ -21,7 +20,7 @@ fn visible_text(text: impl Into<String>) -> ContentBlock {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct ImageReadParams {
-    /// Local file path or http(s) URL of the image to load.
+    /// Image path relative to the current project directory.
     pub source: String,
     /// Optional crop rectangle in pixels. Coordinates are measured from the top-left corner.
     /// use to zoom in and get more details.
@@ -166,51 +165,11 @@ async fn load_image(
 }
 
 async fn load_image_bytes(source: &str, working_dir: Option<&Path>) -> Result<Vec<u8>, String> {
-    if let Ok(url) = url::Url::parse(source) {
-        match url.scheme() {
-            "http" | "https" => load_url_bytes(url).await,
-            "file" => {
-                let path = url
-                    .to_file_path()
-                    .map_err(|_| "invalid file URL".to_string())?;
-                load_file_bytes(path)
-            }
-            _ => load_file_bytes(resolve_path(source, working_dir)),
-        }
-    } else {
-        load_file_bytes(resolve_path(source, working_dir))
+    if url::Url::parse(source).is_ok() {
+        return Err("URLs are not allowed; use an image inside the project directory".to_string());
     }
-}
-
-async fn load_url_bytes(url: url::Url) -> Result<Vec<u8>, String> {
-    let client = reqwest::Client::builder()
-        .user_agent(concat!(
-            "goose/",
-            env!("CARGO_PKG_VERSION"),
-            " (+https://github.com/aaif-goose/goose)"
-        ))
-        .timeout(Duration::from_secs(30))
-        .build()
-        .map_err(|error| format!("failed to create HTTP client: {error}"))?;
-
-    let response = client
-        .get(url)
-        .send()
-        .await
-        .map_err(|error| format!("failed to download image: {error}"))?
-        .error_for_status()
-        .map_err(|error| format!("failed to download image: {error}"))?;
-
-    if let Some(len) = response.content_length() {
-        ensure_image_size(len)?;
-    }
-
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|error| format!("failed to read image response: {error}"))?;
-
-    Ok(bytes.to_vec())
+    let path = resolve_workspace_path(source, working_dir, PathRequirement::Existing)?;
+    load_file_bytes(path)
 }
 
 fn load_file_bytes(path: PathBuf) -> Result<Vec<u8>, String> {
@@ -319,28 +278,43 @@ mod local_file_tests {
     }
 
     #[tokio::test]
-    async fn local_path_and_file_url_still_decode_small_image() {
+    async fn relative_local_path_decodes_small_image_and_url_is_rejected() {
         let temp = tempfile::tempdir().unwrap();
         let path = temp.path().join("small.png");
         let png = base64::prelude::BASE64_STANDARD.decode(SMALL_PNG).unwrap();
         std::fs::write(&path, &png).unwrap();
         let file_url = url::Url::from_file_path(&path).unwrap().to_string();
 
-        for source in [path.to_string_lossy().into_owned(), file_url] {
-            let loaded = load_image(&ImageReadParams { source, crop: None }, None)
-                .await
-                .unwrap();
+        let loaded = load_image(
+            &ImageReadParams {
+                source: "small.png".to_string(),
+                crop: None,
+            },
+            Some(temp.path()),
+        )
+        .await
+        .unwrap();
 
-            assert_eq!(loaded.mime_type, "image/png");
-            assert_eq!(loaded.bytes_len, png.len());
-            assert_eq!((loaded.width, loaded.height), (1, 1));
-            assert_eq!(
-                base64::prelude::BASE64_STANDARD
-                    .decode(loaded.data)
-                    .unwrap(),
-                png
-            );
-        }
+        assert_eq!(loaded.mime_type, "image/png");
+        assert_eq!(loaded.bytes_len, png.len());
+        assert_eq!((loaded.width, loaded.height), (1, 1));
+        assert_eq!(
+            base64::prelude::BASE64_STANDARD
+                .decode(loaded.data)
+                .unwrap(),
+            png
+        );
+
+        let error = load_image(
+            &ImageReadParams {
+                source: file_url,
+                crop: None,
+            },
+            Some(temp.path()),
+        )
+        .await
+        .unwrap_err();
+        assert!(error.contains("URLs are not allowed"));
     }
 
     #[tokio::test]
@@ -351,10 +325,10 @@ mod local_file_tests {
 
         let error = load_image(
             &ImageReadParams {
-                source: path.to_string_lossy().into_owned(),
+                source: "not-an-image.bin".to_string(),
                 crop: None,
             },
-            None,
+            Some(temp.path()),
         )
         .await
         .unwrap_err();

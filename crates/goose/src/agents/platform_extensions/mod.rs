@@ -11,6 +11,7 @@ pub mod summarize;
 pub mod summon;
 pub mod todo;
 pub mod tom;
+pub(crate) mod workspace;
 
 use std::collections::HashMap;
 

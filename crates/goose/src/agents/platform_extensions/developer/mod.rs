@@ -109,7 +109,7 @@ impl DeveloperClient {
         vec![
             Tool::new(
                 "write".to_string(),
-                "Create a new file or overwrite an existing file. Creates parent directories if needed.".to_string(),
+                "Create or overwrite a file inside the current project directory. Paths must be relative.".to_string(),
                 Self::schema::<FileWriteParams>(),
             )
             .annotate(ToolAnnotations::from_raw(
@@ -121,7 +121,7 @@ impl DeveloperClient {
             )),
             Tool::new(
                 "edit".to_string(),
-                "Edit a file by finding and replacing text. The before text must match exactly and uniquely. Use empty after text to delete.".to_string(),
+                "Edit a file inside the current project directory by finding and replacing text. Paths must be relative.".to_string(),
                 Self::schema::<FileEditParams>(),
             )
             .annotate(ToolAnnotations::from_raw(
@@ -159,7 +159,7 @@ impl DeveloperClient {
             )),
             Tool::new(
                 "tree".to_string(),
-                "List a directory tree with line counts. Traversal respects .gitignore rules.".to_string(),
+                "List a directory tree inside the current project directory. Paths must be relative.".to_string(),
                 Self::schema::<TreeParams>(),
             )
             .annotate(ToolAnnotations::from_raw(
@@ -171,15 +171,15 @@ impl DeveloperClient {
             )),
             Tool::new(
                 "read_image".to_string(),
-                "Read an image from a local file path or http(s) URL and return it as image content for the model to inspect. Supports png, jpeg, gif, and webp.".to_string(),
+                "Read an image inside the current project directory. Paths must be relative; URLs are refused.".to_string(),
                 Self::schema::<ImageReadParams>(),
             )
             .annotate(ToolAnnotations::from_raw(
                 Some("Read Image".to_string()),
-                Some(false),
+                Some(true),
                 Some(false),
                 Some(true),
-                Some(true),
+                Some(false),
             )),
         ]
     }
@@ -280,15 +280,15 @@ mod tests {
     }
 
     #[test]
-    fn read_image_annotations_reflect_network_access() {
+    fn read_image_annotations_reflect_local_read_only_access() {
         let read_image = DeveloperClient::get_tools()
             .into_iter()
             .find(|tool| tool.name == "read_image")
             .unwrap();
         let annotations = read_image.annotations.unwrap();
 
-        assert_eq!(annotations.read_only_hint, Some(false));
-        assert_eq!(annotations.open_world_hint, Some(true));
+        assert_eq!(annotations.read_only_hint, Some(true));
+        assert_eq!(annotations.open_world_hint, Some(false));
     }
 
     fn test_context(data_dir: std::path::PathBuf) -> PlatformExtensionContext {
@@ -352,6 +352,50 @@ mod tests {
             fs::read_to_string(cwd.join("notes.txt")).unwrap(),
             "updated line"
         );
+    }
+
+    #[tokio::test]
+    async fn developer_client_refuses_paths_and_urls_outside_working_dir() {
+        let temp = tempfile::tempdir().unwrap();
+        let client = DeveloperClient::new(test_context(temp.path().join("sessions"))).unwrap();
+        let cwd = temp.path().join("workspace");
+        fs::create_dir_all(&cwd).unwrap();
+        let outside = temp.path().join("outside.txt");
+        fs::write(&outside, "sensitive").unwrap();
+        let ctx = ToolCallContext::new("session".to_owned(), Some(cwd), None);
+
+        let cases = [
+            (
+                "write",
+                object!({"path": "../outside.txt", "content": "exfiltrate"}),
+            ),
+            (
+                "edit",
+                object!({
+                    "path": outside.display().to_string(),
+                    "before": "sensitive",
+                    "after": "changed"
+                }),
+            ),
+            (
+                "tree",
+                object!({"path": temp.path().display().to_string(), "depth": 1}),
+            ),
+            (
+                "read_image",
+                object!({"source": "https://outside.invalid/patient.png"}),
+            ),
+        ];
+
+        for (name, arguments) in cases {
+            let result = client
+                .call_tool(&ctx, name, Some(arguments), CancellationToken::new())
+                .await
+                .unwrap();
+            assert_eq!(result.is_error, Some(true), "{name} should be refused");
+        }
+
+        assert_eq!(fs::read_to_string(outside).unwrap(), "sensitive");
     }
 
     #[cfg(not(windows))]

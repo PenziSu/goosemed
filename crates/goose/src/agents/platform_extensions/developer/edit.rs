@@ -1,15 +1,17 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use rmcp::model::{Annotations, CallToolResult, ContentBlock, TextContent};
 use schemars::JsonSchema;
 use serde::Deserialize;
 
+use crate::agents::platform_extensions::workspace::{resolve_workspace_path, PathRequirement};
+
 const NO_MATCH_PREVIEW_LINES: usize = 20;
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct FileReadParams {
-    /// Absolute path to the file to read.
+    /// Path relative to the current project directory.
     pub path: String,
     /// Line number to start reading from (1-based).
     #[schemars(range(min = 1))]
@@ -49,7 +51,16 @@ impl EditTools {
         params: FileReadParams,
         working_dir: Option<&Path>,
     ) -> CallToolResult {
-        let path = resolve_path(&params.path, working_dir);
+        let path =
+            match resolve_workspace_path(&params.path, working_dir, PathRequirement::Existing) {
+                Ok(path) => path,
+                Err(error) => {
+                    return CallToolResult::error(vec![visible_text(format!(
+                        "Refused to read {}: {}",
+                        params.path, error
+                    ))])
+                }
+            };
 
         match fs::read_to_string(&path) {
             Ok(content) => {
@@ -63,16 +74,24 @@ impl EditTools {
         }
     }
 
-    pub fn file_write(&self, params: FileWriteParams) -> CallToolResult {
-        self.file_write_with_cwd(params, None)
-    }
-
     pub fn file_write_with_cwd(
         &self,
         params: FileWriteParams,
         working_dir: Option<&Path>,
     ) -> CallToolResult {
-        let path = resolve_path(&params.path, working_dir);
+        let path = match resolve_workspace_path(
+            &params.path,
+            working_dir,
+            PathRequirement::AllowMissing,
+        ) {
+            Ok(path) => path,
+            Err(error) => {
+                return CallToolResult::error(vec![visible_text(format!(
+                    "Refused to write {}: {}",
+                    params.path, error
+                ))])
+            }
+        };
 
         if let Some(parent) = path.parent() {
             if !parent.as_os_str().is_empty() && !parent.exists() {
@@ -104,16 +123,21 @@ impl EditTools {
         }
     }
 
-    pub fn file_edit(&self, params: FileEditParams) -> CallToolResult {
-        self.file_edit_with_cwd(params, None)
-    }
-
     pub fn file_edit_with_cwd(
         &self,
         params: FileEditParams,
         working_dir: Option<&Path>,
     ) -> CallToolResult {
-        let path = resolve_path(&params.path, working_dir);
+        let path =
+            match resolve_workspace_path(&params.path, working_dir, PathRequirement::Existing) {
+                Ok(path) => path,
+                Err(error) => {
+                    return CallToolResult::error(vec![visible_text(format!(
+                        "Refused to edit {}: {}",
+                        params.path, error
+                    ))])
+                }
+            };
 
         let content = match fs::read_to_string(&path) {
             Ok(c) => c,
@@ -211,19 +235,6 @@ fn apply_line_limit(content: &str, line: Option<u32>, limit: Option<u32>) -> Str
     lines[start..end].concat()
 }
 
-pub fn resolve_path(path: &str, working_dir: Option<&Path>) -> PathBuf {
-    let path = PathBuf::from(path);
-    if path.is_absolute() {
-        path
-    } else {
-        working_dir
-            .map(Path::to_path_buf)
-            .or_else(|| std::env::current_dir().ok())
-            .unwrap_or_else(|| PathBuf::from("."))
-            .join(path)
-    }
-}
-
 fn count_lines_before(content: &str, byte_pos: usize) -> usize {
     content
         .char_indices()
@@ -317,14 +328,18 @@ mod tests {
 
         let result = tools.file_read_with_cwd(
             FileReadParams {
-                path: path.to_string_lossy().to_string(),
+                path: "read.txt".to_string(),
                 line: None,
                 limit: None,
             },
-            None,
+            Some(dir.path()),
         );
 
-        assert!(!result.is_error.unwrap_or(false));
+        assert!(
+            !result.is_error.unwrap_or(false),
+            "{}",
+            extract_text(&result)
+        );
         assert_eq!(extract_text(&result), "line1\nline2\nline3");
     }
 
@@ -337,11 +352,11 @@ mod tests {
 
         let result = tools.file_read_with_cwd(
             FileReadParams {
-                path: path.to_string_lossy().to_string(),
+                path: "read.txt".to_string(),
                 line: Some(2),
                 limit: Some(1),
             },
-            None,
+            Some(dir.path()),
         );
 
         assert!(!result.is_error.unwrap_or(false));
@@ -354,10 +369,13 @@ mod tests {
         let path = dir.path().join("new_file.txt");
         let tools = EditTools::new();
 
-        let result = tools.file_write(FileWriteParams {
-            path: path.to_string_lossy().to_string(),
-            content: "Hello, world!\nLine 2".to_string(),
-        });
+        let result = tools.file_write_with_cwd(
+            FileWriteParams {
+                path: "new_file.txt".to_string(),
+                content: "Hello, world!\nLine 2".to_string(),
+            },
+            Some(dir.path()),
+        );
 
         assert!(!result.is_error.unwrap_or(false));
         assert!(path.exists());
@@ -371,12 +389,19 @@ mod tests {
         fs::write(&path, "old content").unwrap();
         let tools = EditTools::new();
 
-        let result = tools.file_write(FileWriteParams {
-            path: path.to_string_lossy().to_string(),
-            content: "new content".to_string(),
-        });
+        let result = tools.file_write_with_cwd(
+            FileWriteParams {
+                path: "existing.txt".to_string(),
+                content: "new content".to_string(),
+            },
+            Some(dir.path()),
+        );
 
-        assert!(!result.is_error.unwrap_or(false));
+        assert!(
+            !result.is_error.unwrap_or(false),
+            "{}",
+            extract_text(&result)
+        );
         assert_eq!(fs::read_to_string(&path).unwrap(), "new content");
     }
 
@@ -386,10 +411,13 @@ mod tests {
         let path = dir.path().join("a/b/c/file.txt");
         let tools = EditTools::new();
 
-        let result = tools.file_write(FileWriteParams {
-            path: path.to_string_lossy().to_string(),
-            content: "nested".to_string(),
-        });
+        let result = tools.file_write_with_cwd(
+            FileWriteParams {
+                path: "a/b/c/file.txt".to_string(),
+                content: "nested".to_string(),
+            },
+            Some(dir.path()),
+        );
 
         assert!(!result.is_error.unwrap_or(false));
         assert!(path.exists());
@@ -402,11 +430,14 @@ mod tests {
         fs::write(&path, "fn foo() {\n    println!(\"hello\");\n}").unwrap();
         let tools = EditTools::new();
 
-        let result = tools.file_edit(FileEditParams {
-            path: path.to_string_lossy().to_string(),
-            before: "println!(\"hello\");".to_string(),
-            after: "println!(\"world\");".to_string(),
-        });
+        let result = tools.file_edit_with_cwd(
+            FileEditParams {
+                path: "edit.txt".to_string(),
+                before: "println!(\"hello\");".to_string(),
+                after: "println!(\"world\");".to_string(),
+            },
+            Some(dir.path()),
+        );
 
         assert!(!result.is_error.unwrap_or(false));
         let content = fs::read_to_string(&path).unwrap();
@@ -421,11 +452,14 @@ mod tests {
         fs::write(&path, "some content").unwrap();
         let tools = EditTools::new();
 
-        let result = tools.file_edit(FileEditParams {
-            path: path.to_string_lossy().to_string(),
-            before: "nonexistent".to_string(),
-            after: "replacement".to_string(),
-        });
+        let result = tools.file_edit_with_cwd(
+            FileEditParams {
+                path: "edit.txt".to_string(),
+                before: "nonexistent".to_string(),
+                after: "replacement".to_string(),
+            },
+            Some(dir.path()),
+        );
 
         assert!(result.is_error.unwrap_or(false));
         let text = extract_text(&result);
@@ -441,11 +475,14 @@ mod tests {
         fs::write(&path, "foo\nbar\nfoo\nbaz").unwrap();
         let tools = EditTools::new();
 
-        let result = tools.file_edit(FileEditParams {
-            path: path.to_string_lossy().to_string(),
-            before: "foo".to_string(),
-            after: "qux".to_string(),
-        });
+        let result = tools.file_edit_with_cwd(
+            FileEditParams {
+                path: "edit.txt".to_string(),
+                before: "foo".to_string(),
+                after: "qux".to_string(),
+            },
+            Some(dir.path()),
+        );
 
         assert!(result.is_error.unwrap_or(false));
         assert_eq!(fs::read_to_string(&path).unwrap(), "foo\nbar\nfoo\nbaz");
@@ -458,11 +495,14 @@ mod tests {
         fs::write(&path, "keep\ndelete me\nkeep").unwrap();
         let tools = EditTools::new();
 
-        let result = tools.file_edit(FileEditParams {
-            path: path.to_string_lossy().to_string(),
-            before: "\ndelete me".to_string(),
-            after: "".to_string(),
-        });
+        let result = tools.file_edit_with_cwd(
+            FileEditParams {
+                path: "edit.txt".to_string(),
+                before: "\ndelete me".to_string(),
+                after: "".to_string(),
+            },
+            Some(dir.path()),
+        );
 
         assert!(!result.is_error.unwrap_or(false));
         assert_eq!(fs::read_to_string(&path).unwrap(), "keep\nkeep");

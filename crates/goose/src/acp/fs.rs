@@ -2,10 +2,11 @@ use crate::acp::tool_call_notifier::ToolCallNotifier;
 use crate::acp::tools::AcpAwareToolMeta;
 use crate::agents::mcp_client::{Error as McpError, McpClientTrait};
 use crate::agents::platform_extensions::developer::edit::{
-    resolve_path, string_replace, FileEditParams, FileReadParams, FileWriteParams,
+    string_replace, FileEditParams, FileReadParams, FileWriteParams,
 };
 use crate::agents::platform_extensions::developer::shell::{ShellParams, OUTPUT_LIMIT_BYTES};
 use crate::agents::platform_extensions::developer::DeveloperClient;
+use crate::agents::platform_extensions::workspace::{resolve_workspace_path, PathRequirement};
 use agent_client_protocol::schema::v1::{
     CreateTerminalRequest, Diff, EnvVariable, KillTerminalRequest, ReadTextFileRequest,
     ReleaseTerminalRequest, SessionId, Terminal, TerminalOutputRequest, ToolCallContent,
@@ -146,7 +147,14 @@ impl AcpTools {
             Ok(p) => p,
             Err(e) => return Ok(error_result(e)),
         };
-        let path = resolve_path(&params.path, ctx.working_dir.as_deref());
+        let path = match resolve_workspace_path(
+            &params.path,
+            ctx.working_dir.as_deref(),
+            PathRequirement::Existing,
+        ) {
+            Ok(path) => path,
+            Err(error) => return Ok(fail("read", &params.path, error)),
+        };
         self.update_tool_call(
             ctx,
             ToolCallUpdateFields::new()
@@ -169,7 +177,14 @@ impl AcpTools {
             Ok(p) => p,
             Err(e) => return Ok(error_result(e)),
         };
-        let path = resolve_path(&params.path, ctx.working_dir.as_deref());
+        let path = match resolve_workspace_path(
+            &params.path,
+            ctx.working_dir.as_deref(),
+            PathRequirement::AllowMissing,
+        ) {
+            Ok(path) => path,
+            Err(error) => return Ok(fail("write", &params.path, error)),
+        };
         self.update_tool_call(
             ctx,
             ToolCallUpdateFields::new()
@@ -205,7 +220,14 @@ impl AcpTools {
             Ok(p) => p,
             Err(e) => return Ok(error_result(e)),
         };
-        let path = resolve_path(&params.path, ctx.working_dir.as_deref());
+        let path = match resolve_workspace_path(
+            &params.path,
+            ctx.working_dir.as_deref(),
+            PathRequirement::Existing,
+        ) {
+            Ok(path) => path,
+            Err(error) => return Ok(fail("edit", &params.path, error)),
+        };
         self.update_tool_call(
             ctx,
             ToolCallUpdateFields::new()

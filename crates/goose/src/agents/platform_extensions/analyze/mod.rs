@@ -22,6 +22,8 @@ use serde_json::Value;
 use std::path::{Path, PathBuf};
 use tokio_util::sync::CancellationToken;
 
+use crate::agents::platform_extensions::workspace::{resolve_workspace_path, PathRequirement};
+
 pub static EXTENSION_NAME: &str = "analyze";
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -89,17 +91,6 @@ impl AnalyzeClient {
             .map(Value::Object)
             .ok_or_else(|| "Missing arguments".to_string())?;
         serde_json::from_value(value).map_err(|e| format!("Failed to parse arguments: {e}"))
-    }
-
-    fn resolve_path(path: &str, working_dir: Option<&Path>) -> PathBuf {
-        let p = PathBuf::from(path);
-        if p.is_absolute() {
-            p
-        } else if let Some(cwd) = working_dir {
-            cwd.join(p)
-        } else {
-            p
-        }
     }
 
     fn analyze(&self, params: AnalyzeParams, path: PathBuf) -> CallToolResult {
@@ -218,7 +209,7 @@ impl McpClientTrait for AnalyzeClient {
     ) -> Result<ListToolsResult, Error> {
         let tool = Tool::new(
             "analyze".to_string(),
-            "Analyze code structure in 3 modes: 1) Directory overview - file tree with LOC/function/class counts to max_depth. 2) File details - functions, classes, imports. 3) Symbol focus - call graphs across directory to max_depth (requires file or directory path, case-sensitive). Typical flow: directory → files → symbols. Functions called >3x show •N.".to_string(),
+            "Analyze code inside the current project directory. Paths must be relative. Supports directory overviews, file details, and symbol call graphs.".to_string(),
             Self::schema::<AnalyzeParams>(),
         )
         .annotate(ToolAnnotations::from_raw(
@@ -248,8 +239,17 @@ impl McpClientTrait for AnalyzeClient {
         match name {
             "analyze" => match Self::parse_args::<AnalyzeParams>(arguments) {
                 Ok(params) => {
-                    let path = Self::resolve_path(&params.path, working_dir);
-                    Ok(self.analyze(params, path))
+                    match resolve_workspace_path(
+                        &params.path,
+                        working_dir,
+                        PathRequirement::Existing,
+                    ) {
+                        Ok(path) => Ok(self.analyze(params, path)),
+                        Err(error) => Ok(CallToolResult::error(vec![ContentBlock::text(format!(
+                            "Refused to analyze {}: {}",
+                            params.path, error
+                        ))])),
+                    }
                 }
                 Err(error) => Ok(CallToolResult::error(vec![ContentBlock::text(format!(
                     "Error: {error}"
@@ -271,6 +271,7 @@ mod tests {
     use super::*;
     use crate::session::SessionManager;
     use rmcp::model::ContentBlock;
+    use rmcp::object;
     use std::fs;
     use std::sync::Arc;
     use tempfile::tempdir;
@@ -289,6 +290,31 @@ mod tests {
         match &result.content[0] {
             ContentBlock::Text(t) => &t.text,
             _ => panic!("expected text"),
+        }
+    }
+
+    #[tokio::test]
+    async fn tool_entry_refuses_absolute_and_parent_paths() {
+        let temp = tempdir().unwrap();
+        fs::write(temp.path().join("inside.rs"), "fn inside() {}\n").unwrap();
+        let client = AnalyzeClient::new(ctx()).unwrap();
+        let tool_context =
+            ToolCallContext::new("session".to_string(), Some(temp.path().to_path_buf()), None);
+
+        for path in [
+            temp.path().display().to_string(),
+            "../outside.rs".to_string(),
+        ] {
+            let result = client
+                .call_tool(
+                    &tool_context,
+                    "analyze",
+                    Some(object!({"path": path})),
+                    CancellationToken::new(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(result.is_error, Some(true));
         }
     }
 
