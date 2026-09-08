@@ -81,6 +81,16 @@ ui/text/      # deprecated ACP TUI (see ui/text/README.md)
 # 3. cargo fmt
 ```
 
+## GooseMed Dashboard Workflow
+
+For local GooseMed development, `project-dashboard/data/board.json` is the source of truth for task status.
+
+- Read the board at the start of every user turn before changing GooseMed code.
+- Preserve uncommitted board edits because they may have been made by the user through the dashboard.
+- Move the selected card to `in-progress` before implementation, then to `verification`, and only move it to `done` after its acceptance criteria have been verified.
+- The dashboard does not notify or wake the agent. Detect changes by reading the board and inspecting its Git diff when work resumes.
+- Never write patient data, credentials, secrets, or other protected health information to the board.
+
 ### Run these only if the user has asked you to build/test your changes:
 ```
 # 1. cargo build
