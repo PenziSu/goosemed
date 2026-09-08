@@ -3,11 +3,6 @@ import fs from 'node:fs';
 import { createServer } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import {
-  appendTail as appendStartupTail,
-  createGooseServeStartupDiagnostics,
-  type GooseServeStartupDiagnostics,
-} from './startupDiagnostics';
 
 export interface Logger {
   info: (...args: unknown[]) => void;
@@ -15,8 +10,8 @@ export interface Logger {
 }
 
 export const defaultLogger: Logger = {
-  info: (...args) => console.log('[goose-serve]', ...args),
-  error: (...args) => console.error('[goose-serve]', ...args),
+  info: () => undefined,
+  error: () => undefined,
 };
 
 export interface FindGooseBinaryOptions {
@@ -36,7 +31,6 @@ export interface StartGooseServeOptions extends FindGooseBinaryOptions {
   /** PATH from the user's login shell, appended so goosed can find CLI providers. */
   loginShellPath?: string | null;
   logger?: Logger;
-  diagnosticsDir?: string;
   readinessFetch?: ReadinessFetch;
 }
 
@@ -49,9 +43,6 @@ export interface GooseServeResult {
   cleanup: () => Promise<void>;
   hasExited: () => boolean;
   getExitDetails: () => { code: number | null; signal: GooseServeExitSignal };
-  startupDiagnosticsPath: string | null;
-  getStartupDiagnostics: () => GooseServeStartupDiagnostics | null;
-  recordStartupEvent: (name: string, details?: Record<string, unknown>) => void;
 }
 
 const existingFile = (candidate: string): boolean => {
@@ -137,10 +128,7 @@ const appendErrorTail = (target: string[], lines: string[], maxLines = 100): voi
 const CERT_FINGERPRINT_PREFIX = 'GOOSED_CERT_FINGERPRINT=';
 const TLS_FINGERPRINT_TIMEOUT_MS = 5000;
 
-const fetchStatus = async (
-  statusUrl: string,
-  readinessFetch: ReadinessFetch
-): Promise<boolean> => {
+const fetchStatus = async (statusUrl: string, readinessFetch: ReadinessFetch): Promise<boolean> => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 1000);
 
@@ -277,16 +265,6 @@ const errorMessage = (error: unknown): string => {
   return String(error);
 };
 
-const withStartupDiagnosticsPath = (
-  message: string,
-  startupDiagnosticsPath: string | null
-): string => {
-  if (!startupDiagnosticsPath) {
-    return message;
-  }
-  return `${message} Startup diagnostics: ${startupDiagnosticsPath}`;
-};
-
 const buildGooseServeEnv = (
   serverSecret: string,
   binaryPath: string,
@@ -331,17 +309,13 @@ export const startGooseServe = async ({
   isPackaged,
   resourcesPath,
   logger = defaultLogger,
-  diagnosticsDir,
   readinessFetch = fetch,
 }: StartGooseServeOptions): Promise<GooseServeResult> => {
   const workingDir = dir || process.cwd();
-  const startupTrace = createGooseServeStartupDiagnostics(diagnosticsDir, workingDir);
-  const startupDiagnosticsPath = startupTrace?.diagnosticsPath ?? null;
   const secretKey = serverSecret.trim();
   if (!secretKey) {
     const message = 'GOOSE_SERVER__SECRET_KEY is required for goose serve';
-    startupTrace?.record('configuration_error', { message });
-    throw new Error(withStartupDiagnosticsPath(message, startupDiagnosticsPath));
+    throw new Error(message);
   }
 
   let goosePath: string;
@@ -349,17 +323,12 @@ export const startGooseServe = async ({
     goosePath = findGooseBinaryPath({ isPackaged, resourcesPath });
   } catch (error) {
     const message = errorMessage(error);
-    startupTrace?.record('binary_resolve_error', { message });
-    throw new Error(withStartupDiagnosticsPath(message, startupDiagnosticsPath), { cause: error });
+    throw new Error(message, { cause: error });
   }
 
   const port = await findAvailablePort();
   const localServeScheme: LocalServeScheme = tls ? 'https' : 'http';
-  const { httpBaseUrl, statusUrl, healthUrl, acpUrl, redactedAcpUrl } = buildLocalServeUrls(
-    port,
-    secretKey,
-    localServeScheme
-  );
+  const { statusUrl, healthUrl, acpUrl } = buildLocalServeUrls(port, secretKey, localServeScheme);
   const errorLog: string[] = [];
   const args = [
     'serve',
@@ -374,22 +343,6 @@ export const startGooseServe = async ({
   ];
 
   logger.info(`Starting goose serve from: ${goosePath} on port ${port} in dir ${workingDir}`);
-  if (startupTrace) {
-    startupTrace.diagnostics.binaryPath = goosePath;
-    startupTrace.diagnostics.httpBaseUrl = httpBaseUrl;
-    startupTrace.diagnostics.readinessUrl = statusUrl;
-    startupTrace.diagnostics.statusUrl = statusUrl;
-    startupTrace.diagnostics.healthUrl = healthUrl;
-    startupTrace.diagnostics.acpUrl = redactedAcpUrl;
-    startupTrace.record('spawn_start', {
-      binaryPath: goosePath,
-      port,
-      tls,
-      workingDir,
-      args,
-    });
-  }
-
   const spawnOptions = {
     env: buildGooseServeEnv(secretKey, goosePath, additionalEnv, loginShellPath),
     cwd: workingDir,
@@ -399,10 +352,6 @@ export const startGooseServe = async ({
   };
 
   const gooseProcess = spawn(goosePath, args, spawnOptions);
-  if (startupTrace) {
-    startupTrace.diagnostics.pid = gooseProcess.pid ?? null;
-    startupTrace.record('spawn_success', { pid: gooseProcess.pid ?? null });
-  }
 
   let exited = false;
   let spawnFailed = false;
@@ -440,7 +389,6 @@ export const startGooseServe = async ({
     }
     certFingerprint = fingerprint;
     logger.info(`Pinned cert fingerprint: ${certFingerprint}`);
-    startupTrace?.record('fingerprint_received', { certFingerprint });
     resolveFingerprint(certFingerprint);
     stopStdoutCollection();
   };
@@ -463,9 +411,6 @@ export const startGooseServe = async ({
   const onStderrData = (data: Buffer) => {
     const lines = data.toString().split('\n');
     appendErrorTail(errorLog, lines);
-    if (startupTrace) {
-      appendStartupTail(startupTrace.diagnostics.stderrTail, lines);
-    }
     for (const line of lines) {
       if (line.trim() && isFatalError(line)) {
         logger.error(`goose serve stderr for port ${port} and dir ${workingDir}: ${line}`);
@@ -482,11 +427,6 @@ export const startGooseServe = async ({
     logger.info(
       `goose serve process exited with code ${code} and signal ${signal} for port ${port} and dir ${workingDir}`
     );
-    if (startupTrace) {
-      startupTrace.diagnostics.childExitCode = code;
-      startupTrace.diagnostics.childExitSignal = signal;
-      startupTrace.record('child_exit', { code, signal });
-    }
     resolveFingerprint(null);
   });
 
@@ -494,7 +434,6 @@ export const startGooseServe = async ({
     spawnFailed = true;
     errorLog.push(error.message);
     logger.error(`Failed to start goose serve on port ${port} and dir ${workingDir}`, error);
-    startupTrace?.record('spawn_error', { message: error.message, name: error.name });
   });
 
   const cleanup = async (): Promise<void> => {
@@ -539,7 +478,6 @@ export const startGooseServe = async ({
   const ready = await waitForGooseServeReady(statusUrl, errorLog, () => exited || spawnFailed, {
     healthUrl,
     readinessFetch,
-    onEvent: startupTrace?.record,
   });
 
   const stopOutputCollection = () => {
@@ -556,15 +494,11 @@ export const startGooseServe = async ({
       : '';
     const stderrDetails = errorLog.length ? ` Stderr: ${errorLog.join('\n')}` : '';
     throw new Error(
-      withStartupDiagnosticsPath(
-        `goose serve did not become ready on ${statusUrl}.${exitDetails}${stderrDetails}`,
-        startupDiagnosticsPath
-      )
+      `goose serve did not become ready on ${statusUrl}.${exitDetails}${stderrDetails}`
     );
   }
 
   if (tls) {
-    startupTrace?.record('fingerprint_wait_start', { timeoutMs: TLS_FINGERPRINT_TIMEOUT_MS });
     const fingerprint = await waitForFingerprint(fingerprintReady, TLS_FINGERPRINT_TIMEOUT_MS);
     if (!fingerprint) {
       stopOutputCollection();
@@ -573,17 +507,8 @@ export const startGooseServe = async ({
         ? ` Process exited with code ${exitCode} and signal ${exitSignal}.`
         : '';
       const stderrDetails = errorLog.length ? ` Stderr: ${errorLog.join('\n')}` : '';
-      startupTrace?.record('fingerprint_missing', {
-        timeoutMs: TLS_FINGERPRINT_TIMEOUT_MS,
-        exited,
-        exitCode,
-        exitSignal,
-      });
       throw new Error(
-        withStartupDiagnosticsPath(
-          `goose serve did not emit TLS certificate fingerprint on ${statusUrl}.${exitDetails}${stderrDetails}`,
-          startupDiagnosticsPath
-        )
+        `goose serve did not emit TLS certificate fingerprint on ${statusUrl}.${exitDetails}${stderrDetails}`
       );
     }
   }
@@ -599,8 +524,5 @@ export const startGooseServe = async ({
     cleanup,
     hasExited: () => exited,
     getExitDetails: () => ({ code: exitCode, signal: exitSignal }),
-    startupDiagnosticsPath,
-    getStartupDiagnostics: () => startupTrace?.diagnostics ?? null,
-    recordStartupEvent: (name, details) => startupTrace?.record(name, details),
   };
 };

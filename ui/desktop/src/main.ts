@@ -57,6 +57,9 @@ import {
   isAuthorizedFileAccessRequest,
   readSelectedRecipe,
 } from './desktopFileAccess';
+import { disableConsoleOutput } from './utils/disableConsoleOutput';
+
+disableConsoleOutput();
 
 // =======================================================================
 // Native menu localization
@@ -166,7 +169,6 @@ function translateMenuLabels(items: MenuItem[]): void {
 
 // Settings management
 const SETTINGS_FILE = path.join(app.getPath('userData'), 'settings.json');
-const STARTUP_LOGS_DIR = path.join(app.getPath('userData'), 'logs', 'startup');
 const validLanguageSettings = new Set<Settings['language']>([
   'system',
   'en',
@@ -1189,7 +1191,6 @@ const createChat = async (
         isPackaged: app.isPackaged,
         resourcesPath: app.isPackaged ? process.resourcesPath : undefined,
         logger: log,
-        diagnosticsDir: STARTUP_LOGS_DIR,
         readinessFetch: net.fetch as unknown as typeof globalThis.fetch,
       });
       if (!gooseServeResult.certFingerprint) {

@@ -6,6 +6,9 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import SuspenseLoader from './suspense-loader';
 import { applyThemeTokens } from './theme/theme-tokens';
 import { currentLocale, currentMessageLocale, loadMessages } from './i18n';
+import { disableConsoleOutput } from './utils/disableConsoleOutput';
+
+disableConsoleOutput();
 
 // Apply theme tokens to :root before first paint.
 applyThemeTokens();

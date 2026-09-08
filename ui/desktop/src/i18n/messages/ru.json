@@ -2405,20 +2405,8 @@
   "onboardingSuccess.getStarted": {
     "defaultMessage": "Начать"
   },
-  "onboardingSuccess.learnMore": {
-    "defaultMessage": "Подробнее"
-  },
   "onboardingSuccess.localModelReady": {
     "defaultMessage": "Локальная модель готова"
-  },
-  "onboardingSuccess.privacyDescription": {
-    "defaultMessage": "Анонимные данные об использовании помогают улучшать goose. Мы никогда не собираем ваши разговоры, код или персональные данные."
-  },
-  "onboardingSuccess.privacyTitle": {
-    "defaultMessage": "Конфиденциальность"
-  },
-  "onboardingSuccess.shareUsageData": {
-    "defaultMessage": "Поделиться анонимными данными об использовании"
   },
   "parameterInput.defaultValue": {
     "defaultMessage": "Значение по умолчанию"
@@ -2563,36 +2551,6 @@
   },
   "permissionSetting.permissionRulesDescription": {
     "defaultMessage": "Скрытые инструкции, которые будут переданы провайдеру, чтобы направлять ответы и добавлять к ним контекст."
-  },
-  "privacyInfoModal.collectErrors": {
-    "defaultMessage": "Типы ошибок (например, «rate_limit», «auth» - без подробностей)"
-  },
-  "privacyInfoModal.collectExtensions": {
-    "defaultMessage": "Расширения и счетчики использования инструментов (только имена)"
-  },
-  "privacyInfoModal.collectOs": {
-    "defaultMessage": "Операционная система, версия и архитектура"
-  },
-  "privacyInfoModal.collectProvider": {
-    "defaultMessage": "Используемые провайдер и модель"
-  },
-  "privacyInfoModal.collectSession": {
-    "defaultMessage": "Метрики сеанса (длительность, число взаимодействий, использование токенов)"
-  },
-  "privacyInfoModal.collectVersion": {
-    "defaultMessage": "Версия goose и способ установки"
-  },
-  "privacyInfoModal.description": {
-    "defaultMessage": "Анонимные данные об использовании помогают понять как используется goose и найти области для улучшения."
-  },
-  "privacyInfoModal.neverCollect": {
-    "defaultMessage": "Мы никогда не собираем ваши разговоры, код, аргументы инструментов, сообщения об ошибках или персональные данные. Эту настройку можно изменить в любое время в настройках."
-  },
-  "privacyInfoModal.title": {
-    "defaultMessage": "Сведения о конфиденциальности"
-  },
-  "privacyInfoModal.whatWeCollect": {
-    "defaultMessage": "Что мы собираем:"
   },
   "progressiveMessageList.loadingMessages": {
     "defaultMessage": "Загрузка сообщений... ({renderedCount}/{totalCount})"
@@ -4079,12 +4037,6 @@
   "settings.theme.title": {
     "defaultMessage": "Тема"
   },
-  "settings.updates.description": {
-    "defaultMessage": "Проверяйте и устанавливайте обновления, чтобы goose работал оптимально"
-  },
-  "settings.updates.title": {
-    "defaultMessage": "Обновления"
-  },
   "settings.version.title": {
     "defaultMessage": "Версия"
   },
@@ -4397,45 +4349,6 @@
   "switchModelModal.useOtherProvider": {
     "defaultMessage": "Использовать другого провайдера"
   },
-  "telemetryConsentPrompt.description": {
-    "defaultMessage": "Хотите поделиться анонимными данными об использовании, чтобы помочь улучшить goose? Мы никогда не собираем ваши разговоры, код или персональные данные."
-  },
-  "telemetryConsentPrompt.heading": {
-    "defaultMessage": "Помогите улучшить goose"
-  },
-  "telemetryConsentPrompt.learnMore": {
-    "defaultMessage": "Подробнее"
-  },
-  "telemetryConsentPrompt.optIn": {
-    "defaultMessage": "Да, делиться анонимными данными об использовании"
-  },
-  "telemetryConsentPrompt.optOut": {
-    "defaultMessage": "Нет, спасибо"
-  },
-  "telemetrySettings.configErrorTitle": {
-    "defaultMessage": "Ошибка конфигурации"
-  },
-  "telemetrySettings.description": {
-    "defaultMessage": "Управляйте использованием ваших данных"
-  },
-  "telemetrySettings.learnMore": {
-    "defaultMessage": "Подробнее"
-  },
-  "telemetrySettings.loadError": {
-    "defaultMessage": "Не удалось загрузить настройки телеметрии."
-  },
-  "telemetrySettings.title": {
-    "defaultMessage": "Конфиденциальность"
-  },
-  "telemetrySettings.toggleDescription": {
-    "defaultMessage": "Помогите улучшить goose, делясь анонимной статистикой использования."
-  },
-  "telemetrySettings.toggleLabel": {
-    "defaultMessage": "Анонимные данные об использовании"
-  },
-  "telemetrySettings.updateError": {
-    "defaultMessage": "Не удалось обновить настройки телеметрии."
-  },
   "themeSelector.aura": {
     "defaultMessage": "Aura"
   },
@@ -4510,63 +4423,6 @@
   },
   "toolConfirmation.gooseWouldLikeToCallWithName": {
     "defaultMessage": "Goose хочет вызвать {toolName}. Разрешить?"
-  },
-  "updateSection.autoDownload": {
-    "defaultMessage": "Обновление будет автоматически скачано в фоновом режиме."
-  },
-  "updateSection.autoDownloadDisabledByEnv": {
-    "defaultMessage": "Автоматическая загрузка отключена через переменную окружения GOOSE_DISABLE_AUTO_DOWNLOAD."
-  },
-  "updateSection.autoDownloadDisabledNote": {
-    "defaultMessage": "Автоматическая загрузка отключена. Нажмите «Скачать сейчас», чтобы загрузить вручную."
-  },
-  "updateSection.checkForUpdates": {
-    "defaultMessage": "Проверить обновления"
-  },
-  "updateSection.checking": {
-    "defaultMessage": "Проверка обновлений..."
-  },
-  "updateSection.currentVersion": {
-    "defaultMessage": "Текущая версия"
-  },
-  "updateSection.disableAutoDownload": {
-    "defaultMessage": "Отключить автоматическую загрузку обновлений"
-  },
-  "updateSection.disableAutoDownloadDesc": {
-    "defaultMessage": "Когда включено, Goose будет уведомлять о новых версиях, но не будет загружать их автоматически."
-  },
-  "updateSection.downloadNow": {
-    "defaultMessage": "Скачать сейчас"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "Обновление скачано и готово к установке!"
-  },
-  "updateSection.downloadingProgress": {
-    "defaultMessage": "Скачивание обновления... {percent}%"
-  },
-  "updateSection.downloadingUpdate": {
-    "defaultMessage": "Скачивание обновления..."
-  },
-  "updateSection.installAndRestart": {
-    "defaultMessage": "Установить и перезапустить"
-  },
-  "updateSection.latestVersion": {
-    "defaultMessage": "У вас установлена последняя версия!"
-  },
-  "updateSection.loading": {
-    "defaultMessage": "Загрузка..."
-  },
-  "updateSection.upToDate": {
-    "defaultMessage": "(актуально)"
-  },
-  "updateSection.updateAvailable": {
-    "defaultMessage": "Доступно обновление!"
-  },
-  "updateSection.versionAvailable": {
-    "defaultMessage": "→ доступна {version}"
-  },
-  "updateSection.versionIsAvailable": {
-    "defaultMessage": "Доступна версия {version}"
   },
   "userMessage.cancel": {
     "defaultMessage": "Отмена"

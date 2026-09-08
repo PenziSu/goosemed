@@ -25,9 +25,6 @@ function createGooseServeResult(
     cleanup: vi.fn(async () => undefined),
     hasExited: () => false,
     getExitDetails: () => ({ code: null, signal: null }),
-    startupDiagnosticsPath: null,
-    getStartupDiagnostics: () => null,
-    recordStartupEvent: () => undefined,
     ...overrides,
   };
 }

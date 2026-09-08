@@ -11,10 +11,9 @@ pub mod session_manager;
 mod session_naming;
 
 pub use diagnostics::{
-    config_path, generate_diagnostics, get_system_info, latest_llm_log_path, read_capped,
-    read_tail, recent_cli_log_paths, DiagnosticsConfig, DiagnosticsError, DiagnosticsExtensions,
-    DiagnosticsLevel, DiagnosticsLogs, DiagnosticsPrompt, DiagnosticsReport,
-    DiagnosticsScheduledRecipe, DiagnosticsTextFile, SystemInfo,
+    config_path, generate_diagnostics, get_system_info, read_capped, DiagnosticsConfig,
+    DiagnosticsError, DiagnosticsExtensions, DiagnosticsLevel, DiagnosticsLogs, DiagnosticsPrompt,
+    DiagnosticsReport, DiagnosticsScheduledRecipe, DiagnosticsTextFile, SystemInfo,
 };
 pub use export_markdown::{
     export_session_to_markdown, message_to_markdown, user_projected_message_to_markdown,

@@ -2405,20 +2405,8 @@
   "onboardingSuccess.getStarted": {
     "defaultMessage": "Başlayın"
   },
-  "onboardingSuccess.learnMore": {
-    "defaultMessage": "Daha fazla bilgi edinin"
-  },
   "onboardingSuccess.localModelReady": {
     "defaultMessage": "Yerli model hazır"
-  },
-  "onboardingSuccess.privacyDescription": {
-    "defaultMessage": "Anonim kullanım verileri goose'nin iyileştirilmesine yardımcı olur. Konuşmalarınızı, kodlarınızı veya kişisel verilerinizi asla toplamıyoruz."
-  },
-  "onboardingSuccess.privacyTitle": {
-    "defaultMessage": "Gizlilik"
-  },
-  "onboardingSuccess.shareUsageData": {
-    "defaultMessage": "Anonim kullanım verilerini paylaşın"
   },
   "parameterInput.defaultValue": {
     "defaultMessage": "Varsayılan Değer"
@@ -2563,36 +2551,6 @@
   },
   "permissionSetting.permissionRulesDescription": {
     "defaultMessage": "Yanıtlarınızı yönlendirmeye ve bağlam eklemeye yardımcı olmak için sağlayıcıya iletilecek gizli talimatlar."
-  },
-  "privacyInfoModal.collectErrors": {
-    "defaultMessage": "Hata türleri (ör. \"rate_limit\", \"auth\" - ayrıntı yok)"
-  },
-  "privacyInfoModal.collectExtensions": {
-    "defaultMessage": "Uzantılar ve araç kullanım sayıları (yalnızca adlar)"
-  },
-  "privacyInfoModal.collectOs": {
-    "defaultMessage": "İşletim sistemi, sürümü ve mimarisi"
-  },
-  "privacyInfoModal.collectProvider": {
-    "defaultMessage": "Sağlayıcı ve kullanılan model"
-  },
-  "privacyInfoModal.collectSession": {
-    "defaultMessage": "Oturum metrikleri (süre, etkileşim sayısı, belirteç kullanımı)"
-  },
-  "privacyInfoModal.collectVersion": {
-    "defaultMessage": "goose sürümü ve yükleme yöntemi"
-  },
-  "privacyInfoModal.description": {
-    "defaultMessage": "Anonim kullanım verileri, goose'nin nasıl kullanıldığını anlamamıza ve iyileştirilecek alanları belirlememize yardımcı olur."
-  },
-  "privacyInfoModal.neverCollect": {
-    "defaultMessage": "Konuşmalarınızı, kodunuzu, araç argümanlarınızı, hata mesajlarınızı veya herhangi bir kişisel verinizi asla toplamıyoruz. Bu ayarı istediğiniz zaman Ayarlar'dan değiştirebilirsiniz."
-  },
-  "privacyInfoModal.title": {
-    "defaultMessage": "Gizlilik ayrıntıları"
-  },
-  "privacyInfoModal.whatWeCollect": {
-    "defaultMessage": "Ne topluyoruz:"
   },
   "progressiveMessageList.loadingMessages": {
     "defaultMessage": "Mesajlar yükleniyor... ({renderedCount}/{totalCount})"
@@ -4079,12 +4037,6 @@
   "settings.theme.title": {
     "defaultMessage": "Tema"
   },
-  "settings.updates.description": {
-    "defaultMessage": "goose'nin en iyi şekilde çalışmasını sağlamak için güncellemeleri kontrol edin ve yükleyin"
-  },
-  "settings.updates.title": {
-    "defaultMessage": "Güncellemeler"
-  },
   "settings.version.title": {
     "defaultMessage": "Sürüm"
   },
@@ -4397,45 +4349,6 @@
   "switchModelModal.useOtherProvider": {
     "defaultMessage": "Başka sağlayıcı kullan"
   },
-  "telemetryConsentPrompt.description": {
-    "defaultMessage": "goose'nin iyileştirilmesine yardımcı olmak için anonim kullanım verilerini paylaşmak ister misiniz? Konuşmalarınızı, kodlarınızı veya kişisel verilerinizi asla toplamıyoruz."
-  },
-  "telemetryConsentPrompt.heading": {
-    "defaultMessage": "goose'nin iyileştirilmesine yardımcı olun"
-  },
-  "telemetryConsentPrompt.learnMore": {
-    "defaultMessage": "Daha fazla bilgi edinin"
-  },
-  "telemetryConsentPrompt.optIn": {
-    "defaultMessage": "Evet, anonim kullanım verilerini paylaş"
-  },
-  "telemetryConsentPrompt.optOut": {
-    "defaultMessage": "Hayır teşekkürler"
-  },
-  "telemetrySettings.configErrorTitle": {
-    "defaultMessage": "Yapılandırma Hatası"
-  },
-  "telemetrySettings.description": {
-    "defaultMessage": "Verilerinizin nasıl kullanıldığını kontrol edin"
-  },
-  "telemetrySettings.learnMore": {
-    "defaultMessage": "Daha fazla bilgi edinin"
-  },
-  "telemetrySettings.loadError": {
-    "defaultMessage": "Telemetri ayarları yüklenemedi."
-  },
-  "telemetrySettings.title": {
-    "defaultMessage": "Gizlilik"
-  },
-  "telemetrySettings.toggleDescription": {
-    "defaultMessage": "Anonim kullanım istatistiklerini paylaşarak goose'nin geliştirilmesine yardımcı olun."
-  },
-  "telemetrySettings.toggleLabel": {
-    "defaultMessage": "Anonim kullanım verileri"
-  },
-  "telemetrySettings.updateError": {
-    "defaultMessage": "Telemetri ayarları güncellenemedi."
-  },
   "themeSelector.aura": {
     "defaultMessage": "Aura"
   },
@@ -4510,63 +4423,6 @@
   },
   "toolConfirmation.gooseWouldLikeToCallWithName": {
     "defaultMessage": "Goose, {toolName}'yi aramak istiyor. İzin vermek?"
-  },
-  "updateSection.autoDownload": {
-    "defaultMessage": "Güncelleme arka planda otomatik olarak indirilecektir."
-  },
-  "updateSection.autoDownloadDisabledByEnv": {
-    "defaultMessage": "Otomatik indirmeler GOOSE_DISABLE_AUTO_DOWNLOAD ortam değişkeni aracılığıyla devre dışı bırakılmıştır."
-  },
-  "updateSection.autoDownloadDisabledNote": {
-    "defaultMessage": "Otomatik indirme devre dışı. Manuel olarak indirmek için \"Şimdi İndir\"e tıklayın."
-  },
-  "updateSection.checkForUpdates": {
-    "defaultMessage": "Güncellemeleri Kontrol Et"
-  },
-  "updateSection.checking": {
-    "defaultMessage": "Güncellemeler kontrol ediliyor..."
-  },
-  "updateSection.currentVersion": {
-    "defaultMessage": "Güncel sürüm"
-  },
-  "updateSection.disableAutoDownload": {
-    "defaultMessage": "Otomatik güncelleme indirmelerini devre dışı bırak"
-  },
-  "updateSection.disableAutoDownloadDesc": {
-    "defaultMessage": "Etkinleştirildiğinde, Goose yeni sürümleri bildirir ancak bunları otomatik olarak indirmez."
-  },
-  "updateSection.downloadNow": {
-    "defaultMessage": "Şimdi İndir"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "Güncelleme indirildi ve kuruluma hazır!"
-  },
-  "updateSection.downloadingProgress": {
-    "defaultMessage": "Güncelleme indiriliyor... {percent}%"
-  },
-  "updateSection.downloadingUpdate": {
-    "defaultMessage": "Güncelleme indiriliyor..."
-  },
-  "updateSection.installAndRestart": {
-    "defaultMessage": "Yükle ve Yeniden Başlat"
-  },
-  "updateSection.latestVersion": {
-    "defaultMessage": "En son sürümü çalıştırıyorsunuz!"
-  },
-  "updateSection.loading": {
-    "defaultMessage": "Yükleniyor..."
-  },
-  "updateSection.upToDate": {
-    "defaultMessage": "(güncel)"
-  },
-  "updateSection.updateAvailable": {
-    "defaultMessage": "Güncelleme mevcut!"
-  },
-  "updateSection.versionAvailable": {
-    "defaultMessage": "→ {version} mevcut"
-  },
-  "updateSection.versionIsAvailable": {
-    "defaultMessage": "Sürüm {version} mevcut"
   },
   "userMessage.cancel": {
     "defaultMessage": "İptal"

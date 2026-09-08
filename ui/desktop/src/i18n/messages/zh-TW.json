@@ -2405,20 +2405,8 @@
   "onboardingSuccess.getStarted": {
     "defaultMessage": "開始使用"
   },
-  "onboardingSuccess.learnMore": {
-    "defaultMessage": "瞭解更多"
-  },
   "onboardingSuccess.localModelReady": {
     "defaultMessage": "本機模型已就緒"
-  },
-  "onboardingSuccess.privacyDescription": {
-    "defaultMessage": "匿名使用資料有助於改善 goose。我們絕不會收集您的對話、程式碼或個人資料。"
-  },
-  "onboardingSuccess.privacyTitle": {
-    "defaultMessage": "隱私權"
-  },
-  "onboardingSuccess.shareUsageData": {
-    "defaultMessage": "分享匿名使用資料"
   },
   "parameterInput.defaultValue": {
     "defaultMessage": "預設值"
@@ -2563,36 +2551,6 @@
   },
   "permissionSetting.permissionRulesDescription": {
     "defaultMessage": "將傳遞給提供者的隱藏指示，用於引導並為您的回應補充背景資訊。"
-  },
-  "privacyInfoModal.collectErrors": {
-    "defaultMessage": "錯誤類型（例如「rate_limit」、「auth」－不含詳細資料）"
-  },
-  "privacyInfoModal.collectExtensions": {
-    "defaultMessage": "擴充功能與工具使用次數（僅名稱）"
-  },
-  "privacyInfoModal.collectOs": {
-    "defaultMessage": "作業系統、版本與架構"
-  },
-  "privacyInfoModal.collectProvider": {
-    "defaultMessage": "所使用的提供者與模型"
-  },
-  "privacyInfoModal.collectSession": {
-    "defaultMessage": "工作階段指標（持續時間、互動次數、權杖用量）"
-  },
-  "privacyInfoModal.collectVersion": {
-    "defaultMessage": "goose 版本與安裝方式"
-  },
-  "privacyInfoModal.description": {
-    "defaultMessage": "匿名使用資料有助於我們瞭解 goose 的使用情況並找出可改善的方面。"
-  },
-  "privacyInfoModal.neverCollect": {
-    "defaultMessage": "我們絕不會收集您的對話、程式碼、工具引數、錯誤訊息或任何個人資料。您隨時可以在「設定」中變更此設定。"
-  },
-  "privacyInfoModal.title": {
-    "defaultMessage": "隱私權詳細資料"
-  },
-  "privacyInfoModal.whatWeCollect": {
-    "defaultMessage": "我們收集的內容："
   },
   "progressiveMessageList.loadingMessages": {
     "defaultMessage": "正在載入訊息... ({renderedCount}/{totalCount})"
@@ -4079,12 +4037,6 @@
   "settings.theme.title": {
     "defaultMessage": "佈景主題"
   },
-  "settings.updates.description": {
-    "defaultMessage": "檢查並安裝更新，讓 goose 保持最佳運作狀態"
-  },
-  "settings.updates.title": {
-    "defaultMessage": "更新"
-  },
   "settings.version.title": {
     "defaultMessage": "版本"
   },
@@ -4397,45 +4349,6 @@
   "switchModelModal.useOtherProvider": {
     "defaultMessage": "使用其他提供者"
   },
-  "telemetryConsentPrompt.description": {
-    "defaultMessage": "您願意分享匿名使用資料以協助改善 goose 嗎？我們絕不會收集您的對話、程式碼或個人資料。"
-  },
-  "telemetryConsentPrompt.heading": {
-    "defaultMessage": "協助改善 goose"
-  },
-  "telemetryConsentPrompt.learnMore": {
-    "defaultMessage": "瞭解詳情"
-  },
-  "telemetryConsentPrompt.optIn": {
-    "defaultMessage": "好的，分享匿名使用資料"
-  },
-  "telemetryConsentPrompt.optOut": {
-    "defaultMessage": "不用了，謝謝"
-  },
-  "telemetrySettings.configErrorTitle": {
-    "defaultMessage": "設定錯誤"
-  },
-  "telemetrySettings.description": {
-    "defaultMessage": "控制您的資料使用方式"
-  },
-  "telemetrySettings.learnMore": {
-    "defaultMessage": "瞭解詳情"
-  },
-  "telemetrySettings.loadError": {
-    "defaultMessage": "無法載入遙測設定。"
-  },
-  "telemetrySettings.title": {
-    "defaultMessage": "隱私"
-  },
-  "telemetrySettings.toggleDescription": {
-    "defaultMessage": "分享匿名使用統計資料以協助改善 goose。"
-  },
-  "telemetrySettings.toggleLabel": {
-    "defaultMessage": "匿名使用資料"
-  },
-  "telemetrySettings.updateError": {
-    "defaultMessage": "無法更新遙測設定。"
-  },
   "themeSelector.aura": {
     "defaultMessage": "Aura"
   },
@@ -4510,63 +4423,6 @@
   },
   "toolConfirmation.gooseWouldLikeToCallWithName": {
     "defaultMessage": "Goose 想要呼叫 {toolName}。要允許嗎？"
-  },
-  "updateSection.autoDownload": {
-    "defaultMessage": "Goose 會在背景下載更新，並於您下次結束或重新啟動時安裝。"
-  },
-  "updateSection.autoDownloadDisabledByEnv": {
-    "defaultMessage": "已透過 GOOSE_DISABLE_AUTO_DOWNLOAD 環境變數停用自動下載。"
-  },
-  "updateSection.autoDownloadDisabledNote": {
-    "defaultMessage": "已停用自動下載。請點選「立即下載」以手動下載。"
-  },
-  "updateSection.checkForUpdates": {
-    "defaultMessage": "檢查更新"
-  },
-  "updateSection.checking": {
-    "defaultMessage": "正在檢查更新..."
-  },
-  "updateSection.currentVersion": {
-    "defaultMessage": "目前版本"
-  },
-  "updateSection.disableAutoDownload": {
-    "defaultMessage": "停用自動下載更新"
-  },
-  "updateSection.disableAutoDownloadDesc": {
-    "defaultMessage": "啟用後，Goose 會通知您有新版本，但不會自動下載。"
-  },
-  "updateSection.downloadNow": {
-    "defaultMessage": "立即下載"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "更新已下載完成並可供安裝！"
-  },
-  "updateSection.downloadingProgress": {
-    "defaultMessage": "正在下載更新... {percent}%"
-  },
-  "updateSection.downloadingUpdate": {
-    "defaultMessage": "正在下載更新..."
-  },
-  "updateSection.installAndRestart": {
-    "defaultMessage": "安裝並重新啟動"
-  },
-  "updateSection.latestVersion": {
-    "defaultMessage": "您執行的是最新版本！"
-  },
-  "updateSection.loading": {
-    "defaultMessage": "載入中..."
-  },
-  "updateSection.upToDate": {
-    "defaultMessage": "（為最新版本）"
-  },
-  "updateSection.updateAvailable": {
-    "defaultMessage": "有可用的更新！"
-  },
-  "updateSection.versionAvailable": {
-    "defaultMessage": "→ 有可用的 {version}"
-  },
-  "updateSection.versionIsAvailable": {
-    "defaultMessage": "{version} 版本已可使用"
   },
   "userMessage.cancel": {
     "defaultMessage": "取消"

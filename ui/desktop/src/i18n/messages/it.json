@@ -2405,20 +2405,8 @@
   "onboardingSuccess.getStarted": {
     "defaultMessage": "Inizia"
   },
-  "onboardingSuccess.learnMore": {
-    "defaultMessage": "Scopri di più"
-  },
   "onboardingSuccess.localModelReady": {
     "defaultMessage": "Modello locale pronto"
-  },
-  "onboardingSuccess.privacyDescription": {
-    "defaultMessage": "I dati di utilizzo anonimi aiutano a migliorare goose. Non raccogliamo mai le tue conversazioni, il tuo codice o i tuoi dati personali."
-  },
-  "onboardingSuccess.privacyTitle": {
-    "defaultMessage": "Privacy"
-  },
-  "onboardingSuccess.shareUsageData": {
-    "defaultMessage": "Condividi dati di utilizzo anonimi"
   },
   "parameterInput.defaultValue": {
     "defaultMessage": "Valore predefinito"
@@ -2563,36 +2551,6 @@
   },
   "permissionSetting.permissionRulesDescription": {
     "defaultMessage": "Istruzioni nascoste che verranno passate al provider per aiutare a indirizzare e aggiungere contesto alle tue risposte."
-  },
-  "privacyInfoModal.collectErrors": {
-    "defaultMessage": "Tipi di errore (es. \"rate_limit\", \"auth\" - nessun dettaglio)"
-  },
-  "privacyInfoModal.collectExtensions": {
-    "defaultMessage": "Conteggi di utilizzo di estensioni e strumenti (solo nomi)"
-  },
-  "privacyInfoModal.collectOs": {
-    "defaultMessage": "Sistema operativo, versione e architettura"
-  },
-  "privacyInfoModal.collectProvider": {
-    "defaultMessage": "Provider e modello utilizzati"
-  },
-  "privacyInfoModal.collectSession": {
-    "defaultMessage": "Metriche della sessione (durata, numero di interazioni, utilizzo di token)"
-  },
-  "privacyInfoModal.collectVersion": {
-    "defaultMessage": "Versione di goose e metodo di installazione"
-  },
-  "privacyInfoModal.description": {
-    "defaultMessage": "I dati di utilizzo anonimi ci aiutano a capire come viene usato goose e a individuare le aree di miglioramento."
-  },
-  "privacyInfoModal.neverCollect": {
-    "defaultMessage": "Non raccogliamo mai le tue conversazioni, il tuo codice, gli argomenti degli strumenti, i messaggi di errore o alcun dato personale. Puoi modificare questa impostazione in qualsiasi momento in Impostazioni."
-  },
-  "privacyInfoModal.title": {
-    "defaultMessage": "Dettagli sulla privacy"
-  },
-  "privacyInfoModal.whatWeCollect": {
-    "defaultMessage": "Cosa raccogliamo:"
   },
   "progressiveMessageList.loadingMessages": {
     "defaultMessage": "Caricamento messaggi... ({renderedCount}/{totalCount})"
@@ -4079,12 +4037,6 @@
   "settings.theme.title": {
     "defaultMessage": "Tema"
   },
-  "settings.updates.description": {
-    "defaultMessage": "Controlla e installa gli aggiornamenti per mantenere goose sempre al meglio"
-  },
-  "settings.updates.title": {
-    "defaultMessage": "Aggiornamenti"
-  },
   "settings.version.title": {
     "defaultMessage": "Versione"
   },
@@ -4397,45 +4349,6 @@
   "switchModelModal.useOtherProvider": {
     "defaultMessage": "Usa un altro provider"
   },
-  "telemetryConsentPrompt.description": {
-    "defaultMessage": "Vuoi condividere dati di utilizzo anonimi per aiutare a migliorare goose? Non raccogliamo mai le tue conversazioni, il tuo codice o i tuoi dati personali."
-  },
-  "telemetryConsentPrompt.heading": {
-    "defaultMessage": "Aiuta a migliorare goose"
-  },
-  "telemetryConsentPrompt.learnMore": {
-    "defaultMessage": "Scopri di più"
-  },
-  "telemetryConsentPrompt.optIn": {
-    "defaultMessage": "Sì, condividi dati di utilizzo anonimi"
-  },
-  "telemetryConsentPrompt.optOut": {
-    "defaultMessage": "No, grazie"
-  },
-  "telemetrySettings.configErrorTitle": {
-    "defaultMessage": "Errore di configurazione"
-  },
-  "telemetrySettings.description": {
-    "defaultMessage": "Controlla come vengono usati i tuoi dati"
-  },
-  "telemetrySettings.learnMore": {
-    "defaultMessage": "Scopri di più"
-  },
-  "telemetrySettings.loadError": {
-    "defaultMessage": "Impossibile caricare le impostazioni di telemetria."
-  },
-  "telemetrySettings.title": {
-    "defaultMessage": "Privacy"
-  },
-  "telemetrySettings.toggleDescription": {
-    "defaultMessage": "Aiuta a migliorare goose condividendo statistiche di utilizzo anonime."
-  },
-  "telemetrySettings.toggleLabel": {
-    "defaultMessage": "Dati di utilizzo anonimi"
-  },
-  "telemetrySettings.updateError": {
-    "defaultMessage": "Impossibile aggiornare le impostazioni di telemetria."
-  },
   "themeSelector.aura": {
     "defaultMessage": "Aura"
   },
@@ -4510,63 +4423,6 @@
   },
   "toolConfirmation.gooseWouldLikeToCallWithName": {
     "defaultMessage": "Goose desidera richiamare {toolName}. Consentire?"
-  },
-  "updateSection.autoDownload": {
-    "defaultMessage": "Goose scaricherà l'aggiornamento in background e lo installerà al prossimo arresto o riavvio."
-  },
-  "updateSection.autoDownloadDisabledByEnv": {
-    "defaultMessage": "I download automatici sono disabilitati tramite la variabile d'ambiente GOOSE_DISABLE_AUTO_DOWNLOAD."
-  },
-  "updateSection.autoDownloadDisabledNote": {
-    "defaultMessage": "Il download automatico è disabilitato. Fai clic su \"Scarica ora\" per scaricare manualmente."
-  },
-  "updateSection.checkForUpdates": {
-    "defaultMessage": "Controlla aggiornamenti"
-  },
-  "updateSection.checking": {
-    "defaultMessage": "Controllo degli aggiornamenti..."
-  },
-  "updateSection.currentVersion": {
-    "defaultMessage": "Versione attuale"
-  },
-  "updateSection.disableAutoDownload": {
-    "defaultMessage": "Disabilita i download automatici degli aggiornamenti"
-  },
-  "updateSection.disableAutoDownloadDesc": {
-    "defaultMessage": "Se abilitato, Goose ti avviserà delle nuove versioni ma non le scaricherà automaticamente."
-  },
-  "updateSection.downloadNow": {
-    "defaultMessage": "Scarica ora"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "Aggiornamento scaricato e pronto per l'installazione!"
-  },
-  "updateSection.downloadingProgress": {
-    "defaultMessage": "Download dell'aggiornamento... {percent}%"
-  },
-  "updateSection.downloadingUpdate": {
-    "defaultMessage": "Download dell'aggiornamento..."
-  },
-  "updateSection.installAndRestart": {
-    "defaultMessage": "Installa e riavvia"
-  },
-  "updateSection.latestVersion": {
-    "defaultMessage": "Stai usando la versione più recente!"
-  },
-  "updateSection.loading": {
-    "defaultMessage": "Caricamento..."
-  },
-  "updateSection.upToDate": {
-    "defaultMessage": "(aggiornato)"
-  },
-  "updateSection.updateAvailable": {
-    "defaultMessage": "Aggiornamento disponibile!"
-  },
-  "updateSection.versionAvailable": {
-    "defaultMessage": "→ {version} disponibile"
-  },
-  "updateSection.versionIsAvailable": {
-    "defaultMessage": "La versione {version} è disponibile"
   },
   "userMessage.cancel": {
     "defaultMessage": "Annulla"

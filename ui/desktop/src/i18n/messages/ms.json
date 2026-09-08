@@ -2405,20 +2405,8 @@
   "onboardingSuccess.getStarted": {
     "defaultMessage": "Mulakan"
   },
-  "onboardingSuccess.learnMore": {
-    "defaultMessage": "Ketahui lebih lanjut"
-  },
   "onboardingSuccess.localModelReady": {
     "defaultMessage": "Model setempat sedia"
-  },
-  "onboardingSuccess.privacyDescription": {
-    "defaultMessage": "Data penggunaan tanpa nama membantu menambah baik goose. Kami tidak sekali-kali mengumpul perbualan, kod atau data peribadi anda."
-  },
-  "onboardingSuccess.privacyTitle": {
-    "defaultMessage": "Privasi"
-  },
-  "onboardingSuccess.shareUsageData": {
-    "defaultMessage": "Kongsi data penggunaan tanpa nama"
   },
   "parameterInput.defaultValue": {
     "defaultMessage": "Nilai Lalai"
@@ -2563,36 +2551,6 @@
   },
   "permissionSetting.permissionRulesDescription": {
     "defaultMessage": "Arahan tersembunyi yang akan dihantar kepada penyedia untuk membantu mengarah dan menambah konteks pada respons anda."
-  },
-  "privacyInfoModal.collectErrors": {
-    "defaultMessage": "Jenis ralat (cth., \"rate_limit\", \"auth\" - tanpa butiran)"
-  },
-  "privacyInfoModal.collectExtensions": {
-    "defaultMessage": "Sambungan dan kiraan penggunaan alat (nama sahaja)"
-  },
-  "privacyInfoModal.collectOs": {
-    "defaultMessage": "Sistem pengendalian, versi dan seni bina"
-  },
-  "privacyInfoModal.collectProvider": {
-    "defaultMessage": "Penyedia dan model yang digunakan"
-  },
-  "privacyInfoModal.collectSession": {
-    "defaultMessage": "Metrik sesi (tempoh, kiraan interaksi, penggunaan token)"
-  },
-  "privacyInfoModal.collectVersion": {
-    "defaultMessage": "Versi goose dan kaedah pemasangan"
-  },
-  "privacyInfoModal.description": {
-    "defaultMessage": "Data penggunaan tanpa nama membantu kami memahami cara goose digunakan dan mengenal pasti bidang untuk penambahbaikan."
-  },
-  "privacyInfoModal.neverCollect": {
-    "defaultMessage": "Kami tidak sekali-kali mengumpul perbualan, kod, argumen alat, mesej ralat atau sebarang data peribadi anda. Anda boleh menukar tetapan ini pada bila-bila masa dalam Tetapan."
-  },
-  "privacyInfoModal.title": {
-    "defaultMessage": "Butiran privasi"
-  },
-  "privacyInfoModal.whatWeCollect": {
-    "defaultMessage": "Apa yang kami kumpul:"
   },
   "progressiveMessageList.loadingMessages": {
     "defaultMessage": "Memuatkan mesej... ({renderedCount}/{totalCount})"
@@ -4079,12 +4037,6 @@
   "settings.theme.title": {
     "defaultMessage": "Tema"
   },
-  "settings.updates.description": {
-    "defaultMessage": "Semak dan pasang kemas kini untuk memastikan goose berjalan dengan terbaik"
-  },
-  "settings.updates.title": {
-    "defaultMessage": "Kemas Kini"
-  },
   "settings.version.title": {
     "defaultMessage": "Versi"
   },
@@ -4397,45 +4349,6 @@
   "switchModelModal.useOtherProvider": {
     "defaultMessage": "Gunakan penyedia lain"
   },
-  "telemetryConsentPrompt.description": {
-    "defaultMessage": "Adakah anda ingin berkongsi data penggunaan tanpa nama untuk membantu menambah baik goose? Kami tidak pernah mengumpul perbualan, kod, atau data peribadi anda."
-  },
-  "telemetryConsentPrompt.heading": {
-    "defaultMessage": "Bantu menambah baik goose"
-  },
-  "telemetryConsentPrompt.learnMore": {
-    "defaultMessage": "Ketahui lebih lanjut"
-  },
-  "telemetryConsentPrompt.optIn": {
-    "defaultMessage": "Ya, kongsi data penggunaan tanpa nama"
-  },
-  "telemetryConsentPrompt.optOut": {
-    "defaultMessage": "Tidak, terima kasih"
-  },
-  "telemetrySettings.configErrorTitle": {
-    "defaultMessage": "Ralat Konfigurasi"
-  },
-  "telemetrySettings.description": {
-    "defaultMessage": "Kawal cara data anda digunakan"
-  },
-  "telemetrySettings.learnMore": {
-    "defaultMessage": "Ketahui lebih lanjut"
-  },
-  "telemetrySettings.loadError": {
-    "defaultMessage": "Gagal memuatkan tetapan telemetri."
-  },
-  "telemetrySettings.title": {
-    "defaultMessage": "Privasi"
-  },
-  "telemetrySettings.toggleDescription": {
-    "defaultMessage": "Bantu menambah baik goose dengan berkongsi statistik penggunaan tanpa nama."
-  },
-  "telemetrySettings.toggleLabel": {
-    "defaultMessage": "Data penggunaan tanpa nama"
-  },
-  "telemetrySettings.updateError": {
-    "defaultMessage": "Gagal mengemas kini tetapan telemetri."
-  },
   "themeSelector.aura": {
     "defaultMessage": "Aura"
   },
@@ -4510,63 +4423,6 @@
   },
   "toolConfirmation.gooseWouldLikeToCallWithName": {
     "defaultMessage": "Goose ingin memanggil {toolName}. Benarkan?"
-  },
-  "updateSection.autoDownload": {
-    "defaultMessage": "Goose akan memuat turun kemas kini di latar belakang dan memasangnya pada kali seterusnya anda keluar atau mula semula."
-  },
-  "updateSection.autoDownloadDisabledByEnv": {
-    "defaultMessage": "Muat turun automatik dilumpuhkan melalui pemboleh ubah persekitaran GOOSE_DISABLE_AUTO_DOWNLOAD."
-  },
-  "updateSection.autoDownloadDisabledNote": {
-    "defaultMessage": "Muat turun automatik dilumpuhkan. Klik \"Muat Turun Sekarang\" untuk memuat turun secara manual."
-  },
-  "updateSection.checkForUpdates": {
-    "defaultMessage": "Semak Kemas Kini"
-  },
-  "updateSection.checking": {
-    "defaultMessage": "Menyemak kemas kini..."
-  },
-  "updateSection.currentVersion": {
-    "defaultMessage": "Versi semasa"
-  },
-  "updateSection.disableAutoDownload": {
-    "defaultMessage": "Lumpuhkan muat turun kemas kini automatik"
-  },
-  "updateSection.disableAutoDownloadDesc": {
-    "defaultMessage": "Apabila didayakan, Goose akan memberitahu anda tentang versi baharu tetapi tidak akan memuat turunnya secara automatik."
-  },
-  "updateSection.downloadNow": {
-    "defaultMessage": "Muat Turun Sekarang"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "Kemas kini dimuat turun dan sedia untuk dipasang!"
-  },
-  "updateSection.downloadingProgress": {
-    "defaultMessage": "Memuat turun kemas kini... {percent}%"
-  },
-  "updateSection.downloadingUpdate": {
-    "defaultMessage": "Memuat turun kemas kini..."
-  },
-  "updateSection.installAndRestart": {
-    "defaultMessage": "Pasang & Mula Semula"
-  },
-  "updateSection.latestVersion": {
-    "defaultMessage": "Anda sedang menjalankan versi terkini!"
-  },
-  "updateSection.loading": {
-    "defaultMessage": "Memuatkan..."
-  },
-  "updateSection.upToDate": {
-    "defaultMessage": "(terkini)"
-  },
-  "updateSection.updateAvailable": {
-    "defaultMessage": "Kemas kini tersedia!"
-  },
-  "updateSection.versionAvailable": {
-    "defaultMessage": "→ {version} tersedia"
-  },
-  "updateSection.versionIsAvailable": {
-    "defaultMessage": "Versi {version} tersedia"
   },
   "userMessage.cancel": {
     "defaultMessage": "Batal"

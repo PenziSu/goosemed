@@ -16,7 +16,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import ThemeSelector from '../../GooseSidebar/ThemeSelector';
 import BlockLogoBlack from './icons/block-lockup_black.png';
 import BlockLogoWhite from './icons/block-lockup_white.png';
-import TelemetrySettings from './TelemetrySettings';
 import { trackSettingToggled } from '../../../utils/analytics';
 import type { LanguageSetting } from '../../../utils/settings';
 
@@ -482,8 +481,6 @@ export default function AppSettingsSection(_props: AppSettingsSectionProps) {
           </DropdownMenu>
         </CardContent>
       </Card>
-      <TelemetrySettings />
-
       <Card className="rounded-lg">
         <CardHeader className="pb-0">
           <CardTitle className="mb-1">{intl.formatMessage(i18n.helpTitle)}</CardTitle>

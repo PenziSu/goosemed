@@ -1,12 +1,10 @@
-import log from 'electron-log';
-import path from 'node:path';
-import { app } from 'electron';
+const discard = (..._args: unknown[]): void => {};
 
-log.transports.file.resolvePathFn = () => {
-  return path.join(app.getPath('userData'), 'logs', 'main.log');
+const log = {
+  debug: discard,
+  info: discard,
+  warn: discard,
+  error: discard,
 };
-
-log.transports.file.level = app.isPackaged ? 'info' : 'debug';
-log.transports.console.level = app.isPackaged ? false : 'debug';
 
 export default log;

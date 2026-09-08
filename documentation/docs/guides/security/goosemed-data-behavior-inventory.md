@@ -11,13 +11,13 @@
 | D03 | 執行 Shell 與 Python | 命令、檔案內容、stdout、stderr | 子程序、檔案系統、網路 | macOS 已限制專案目錄並拒絕網路，Windows 待完成 |
 | D04 | 使用結構化檔案工具 | 專案內 Excel、圖片與衍生資料 | 目前專案目錄 | 已阻擋絕對路徑、上一層與符號連結跳脫 |
 | D05 | 保存對話工作階段 | 完整對話、工作目錄、模型與工具狀態 | 本機 SQLite | 保留，需納入磁碟加密、權限與清除政策 |
-| D06 | 保存 LLM request log | 完整請求、模型設定、回應、錯誤與用量 | 本機 JSONL | 待移除 |
-| D07 | 保存 Rust trace log | 執行事件、錯誤、路徑，視 log level 可能含內容 | 本機檔案，設定 Langfuse 時也可外送 | 待移除內容型檔案紀錄與 Langfuse 外送 |
-| D08 | 保存 Electron 主程序 log | 桌面事件、錯誤、路徑與程序輸出 | Electron userData 目錄 | 待停用檔案輸出 |
-| D09 | 保存啟動診斷 | 執行檔路徑、工作目錄、內部 URL、stderr 尾端 | Electron userData 的 startup logs | 待停用或改為不落地 |
-| D10 | 保存輸入歷史 | 完整提示詞與拖放檔案路徑 | 瀏覽器 localStorage | 待改為只存記憶體 |
+| D06 | 保存 LLM request log | 完整請求、模型設定、回應、錯誤與用量 | 原本的本機 JSONL | 已移除應用程式 logger 安裝與 JSONL 寫入 |
+| D07 | 保存 Rust trace log | 執行事件、錯誤、路徑，視 log level 可能含內容 | 原本的本機檔案與 Langfuse | 已移除檔案 subscriber 與 Langfuse layer，CLI 僅安裝丟棄事件的 subscriber |
+| D08 | 保存 Electron 主程序 log | 桌面事件、錯誤、路徑與程序輸出 | 原本的 Electron userData 目錄與程序 console | 已移除 `electron-log`，共用 logger 與三個 Electron 入口改為不輸出 |
+| D09 | 保存啟動診斷 | 執行檔路徑、工作目錄、內部 URL、stderr 尾端 | 原本的 Electron userData startup logs | 已移除啟動診斷檔案與寫入流程 |
+| D10 | 保存輸入歷史 | 完整提示詞與拖放檔案路徑 | 程序記憶體 | 已移除 localStorage，只保留目前程序的記憶體歷史 |
 | D11 | 檢查與下載軟體更新 | 版本、平台與網路中繼資料 | 發行站與 GitHub | 已移除桌面更新器及 Rust 預設 update 功能 |
-| D12 | 傳送 Telemetry、OTEL 或追蹤資料 | 使用事件、錯誤、模型與工具欄位 | PostHog、OTLP、Langfuse | 預設建置已排除 Telemetry、OTEL 與相關 Code Mode；Langfuse 待移除 |
+| D12 | 傳送 Telemetry、OTEL 或追蹤資料 | 使用事件、錯誤、模型與工具欄位 | 原本的 PostHog、OTLP、Langfuse | 預設建置已排除 Telemetry、OTEL 與相關 Code Mode，Langfuse 實作已移除 |
 | D13 | 分享或匯入 Nostr 工作階段 | 加密後的完整對話工作階段 | Nostr relay | Rust 預設建置已排除，桌面入口待移除 |
 | D14 | 設定其他 Provider 與 OAuth | Endpoint、模型名稱、憑證與登入狀態 | 任意 Provider 與外部瀏覽器 | 待移除並鎖定院內模型 |
 | D15 | 安裝或執行 extension、plugin、hook 與任意 MCP | 提示詞、工具輸入輸出與程序環境 | 子程序、stdio、HTTP 或外部服務 | 待移除，只保留核准 MCP 與內建受限工具 |
@@ -34,10 +34,10 @@
 | D02、D15 | `crates/goose/src/agents/extension_manager.rs`、`crates/goose/src/agents/platform_extensions/ext_manager.rs`、`crates/goose/src/hooks/` |
 | D03、D04 | `crates/goose/src/agents/platform_extensions/developer/`、`crates/goose/src/agents/platform_extensions/workspace.rs`、`crates/goose/src/agents/platform_extensions/analyze/` |
 | D05 | `crates/goose/src/session/session_manager.rs`，實際根目錄由 `crates/goose/src/config/paths.rs` 決定 |
-| D06 | `crates/goose-cli/src/logging.rs`、`crates/goose/src/providers/utils.rs`、`crates/goose-provider-types/src/request_log.rs` |
-| D07、D12 | `crates/goose/src/logging.rs`、`crates/goose/src/tracing/langfuse_layer.rs`、`crates/goose/src/posthog.rs`、`crates/goose/src/otel/` |
-| D08 | `ui/desktop/src/utils/logger.ts` |
-| D09 | `ui/desktop/src/startupDiagnostics.ts`、`ui/desktop/src/main.ts` |
+| D06 | `crates/goose-cli/src/logging.rs`、`crates/goose/src/providers/utils.rs`；底層 request log 介面仍在 `crates/goose-provider-types/src/request_log.rs`，應用程式未安裝 logger |
+| D07、D12 | `crates/goose-cli/src/logging.rs`、`crates/goose/Cargo.toml`、`crates/goose/src/posthog.rs`、`crates/goose/src/otel/` |
+| D08 | `ui/desktop/src/utils/logger.ts`、`ui/desktop/src/utils/disableConsoleOutput.ts`、`ui/desktop/src/main.ts`、`ui/desktop/src/preload.ts`、`ui/desktop/src/renderer.tsx` |
+| D09 | `ui/desktop/src/gooseServe.ts`、`ui/desktop/src/main.ts` |
 | D10 | `ui/desktop/src/utils/localMessageStorage.ts` |
 | D11 | `crates/goose-cli/Cargo.toml`、`crates/goose/Cargo.toml`、`ui/desktop/src/main.ts` |
 | D13 | `crates/goose/src/session/nostr.rs`、`ui/desktop/src/components/sessions/SessionListView.tsx`、`ui/desktop/src/App.tsx` |

@@ -2405,20 +2405,8 @@
   "onboardingSuccess.getStarted": {
     "defaultMessage": "आरंभ करें"
   },
-  "onboardingSuccess.learnMore": {
-    "defaultMessage": "और जानें"
-  },
   "onboardingSuccess.localModelReady": {
     "defaultMessage": "स्थानीय मॉडल तैयार"
-  },
-  "onboardingSuccess.privacyDescription": {
-    "defaultMessage": "अनाम उपयोग डेटा goose को बेहतर बनाने में मदद करता है। हम कभी भी आपकी बातचीत, कोड या व्यक्तिगत डेटा एकत्र नहीं करते हैं।"
-  },
-  "onboardingSuccess.privacyTitle": {
-    "defaultMessage": "गोपनीयता"
-  },
-  "onboardingSuccess.shareUsageData": {
-    "defaultMessage": "अनाम उपयोग डेटा साझा करें"
   },
   "parameterInput.defaultValue": {
     "defaultMessage": "डिफ़ॉल्ट मान"
@@ -2563,36 +2551,6 @@
   },
   "permissionSetting.permissionRulesDescription": {
     "defaultMessage": "छिपे हुए निर्देश जो आपकी प्रतिक्रियाओं को निर्देशित करने और संदर्भ जोड़ने में सहायता के लिए प्रदाता को भेजे जाएंगे।"
-  },
-  "privacyInfoModal.collectErrors": {
-    "defaultMessage": "त्रुटि प्रकार (उदाहरण के लिए, \"रेट_लिमिट\", \"ऑथ\" - कोई विवरण नहीं)"
-  },
-  "privacyInfoModal.collectExtensions": {
-    "defaultMessage": "एक्सटेंशन और टूल उपयोग की संख्या (केवल नाम)"
-  },
-  "privacyInfoModal.collectOs": {
-    "defaultMessage": "ऑपरेटिंग सिस्टम, संस्करण और आर्किटेक्चर"
-  },
-  "privacyInfoModal.collectProvider": {
-    "defaultMessage": "प्रदाता और मॉडल का उपयोग किया गया"
-  },
-  "privacyInfoModal.collectSession": {
-    "defaultMessage": "सत्र मेट्रिक्स (अवधि, इंटरैक्शन गिनती, टोकन उपयोग)"
-  },
-  "privacyInfoModal.collectVersion": {
-    "defaultMessage": "goose संस्करण और इंस्टाल विधि"
-  },
-  "privacyInfoModal.description": {
-    "defaultMessage": "अनाम उपयोग डेटा हमें यह समझने में मदद करता है कि goose का उपयोग कैसे किया जाता है और सुधार के क्षेत्रों की पहचान की जाती है।"
-  },
-  "privacyInfoModal.neverCollect": {
-    "defaultMessage": "हम कभी भी आपकी बातचीत, कोड, टूल तर्क, त्रुटि संदेश या कोई व्यक्तिगत डेटा एकत्र नहीं करते हैं। आप इस सेटिंग को सेटिंग्स में कभी भी बदल सकते हैं।"
-  },
-  "privacyInfoModal.title": {
-    "defaultMessage": "गोपनीयता विवरण"
-  },
-  "privacyInfoModal.whatWeCollect": {
-    "defaultMessage": "हम क्या एकत्र करते हैं:"
   },
   "progressiveMessageList.loadingMessages": {
     "defaultMessage": "संदेश लोड हो रहे हैं... ({renderedCount}/{totalCount})"
@@ -4079,12 +4037,6 @@
   "settings.theme.title": {
     "defaultMessage": "थीम"
   },
-  "settings.updates.description": {
-    "defaultMessage": "goose को सर्वोत्तम रूप से चालू रखने के लिए अपडेट की जाँच करें और इंस्टॉल करें"
-  },
-  "settings.updates.title": {
-    "defaultMessage": "अद्यतन"
-  },
   "settings.version.title": {
     "defaultMessage": "संस्करण"
   },
@@ -4397,45 +4349,6 @@
   "switchModelModal.useOtherProvider": {
     "defaultMessage": "अन्य प्रदाता का उपयोग करें"
   },
-  "telemetryConsentPrompt.description": {
-    "defaultMessage": "क्या आप goose को बेहतर बनाने में सहायता के लिए अनाम उपयोग डेटा साझा करना चाहेंगे? हम कभी भी आपकी बातचीत, कोड या व्यक्तिगत डेटा एकत्र नहीं करते हैं।"
-  },
-  "telemetryConsentPrompt.heading": {
-    "defaultMessage": "goose को बेहतर बनाने में सहायता करें"
-  },
-  "telemetryConsentPrompt.learnMore": {
-    "defaultMessage": "और जानें"
-  },
-  "telemetryConsentPrompt.optIn": {
-    "defaultMessage": "हाँ, अनाम उपयोग डेटा साझा करें"
-  },
-  "telemetryConsentPrompt.optOut": {
-    "defaultMessage": "नहीं धन्यवाद"
-  },
-  "telemetrySettings.configErrorTitle": {
-    "defaultMessage": "कॉन्फ़िगरेशन त्रुटि"
-  },
-  "telemetrySettings.description": {
-    "defaultMessage": "नियंत्रित करें कि आपके डेटा का उपयोग कैसे किया जाता है"
-  },
-  "telemetrySettings.learnMore": {
-    "defaultMessage": "और जानें"
-  },
-  "telemetrySettings.loadError": {
-    "defaultMessage": "टेलीमेट्री सेटिंग लोड करने में विफल."
-  },
-  "telemetrySettings.title": {
-    "defaultMessage": "गोपनीयता"
-  },
-  "telemetrySettings.toggleDescription": {
-    "defaultMessage": "अनाम उपयोग आँकड़े साझा करके goose को बेहतर बनाने में सहायता करें।"
-  },
-  "telemetrySettings.toggleLabel": {
-    "defaultMessage": "अनाम उपयोग डेटा"
-  },
-  "telemetrySettings.updateError": {
-    "defaultMessage": "टेलीमेट्री सेटिंग अपडेट करने में विफल."
-  },
   "themeSelector.aura": {
     "defaultMessage": "Aura"
   },
@@ -4510,63 +4423,6 @@
   },
   "toolConfirmation.gooseWouldLikeToCallWithName": {
     "defaultMessage": "Goose {toolName} को कॉल करना चाहेंगे। अनुमति दें?"
-  },
-  "updateSection.autoDownload": {
-    "defaultMessage": "अपडेट बैकग्राउंड में अपने आप डाउनलोड हो जाएगा."
-  },
-  "updateSection.autoDownloadDisabledByEnv": {
-    "defaultMessage": "स्वचालित डाउनलोड GOOSE_DISABLE_AUTO_DOWNLOAD पर्यावरण चर के माध्यम से अक्षम हैं।"
-  },
-  "updateSection.autoDownloadDisabledNote": {
-    "defaultMessage": "स्वचालित डाउनलोड अक्षम है। मैन्युअल रूप से डाउनलोड करने के लिए \"अभी डाउनलोड करें\" पर क्लिक करें।"
-  },
-  "updateSection.checkForUpdates": {
-    "defaultMessage": "अद्यतनों के लिए जाँच करें"
-  },
-  "updateSection.checking": {
-    "defaultMessage": "अपडेट की जांच की जा रही है..."
-  },
-  "updateSection.currentVersion": {
-    "defaultMessage": "वर्तमान संस्करण"
-  },
-  "updateSection.disableAutoDownload": {
-    "defaultMessage": "स्वचालित अपडेट डाउनलोड अक्षम करें"
-  },
-  "updateSection.disableAutoDownloadDesc": {
-    "defaultMessage": "सक्षम होने पर, Goose आपको नई संस्करणों की सूचना देगा लेकिन उन्हें स्वचालित रूप से डाउनलोड नहीं करेगा।"
-  },
-  "updateSection.downloadNow": {
-    "defaultMessage": "अभी डाउनलोड करें"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "अपडेट डाउनलोड हो गया है और इंस्टॉल करने के लिए तैयार है!"
-  },
-  "updateSection.downloadingProgress": {
-    "defaultMessage": "अपडेट डाउनलोड हो रहा है... {percent}%"
-  },
-  "updateSection.downloadingUpdate": {
-    "defaultMessage": "अपडेट डाउनलोड हो रहा है..."
-  },
-  "updateSection.installAndRestart": {
-    "defaultMessage": "स्थापित करें और पुनः प्रारंभ करें"
-  },
-  "updateSection.latestVersion": {
-    "defaultMessage": "आप नवीनतम संस्करण चला रहे हैं!"
-  },
-  "updateSection.loading": {
-    "defaultMessage": "लोड हो रहा है..."
-  },
-  "updateSection.upToDate": {
-    "defaultMessage": "(अप टू डेट)"
-  },
-  "updateSection.updateAvailable": {
-    "defaultMessage": "उपलब्ध अद्यतन!"
-  },
-  "updateSection.versionAvailable": {
-    "defaultMessage": "→ {version} उपलब्ध"
-  },
-  "updateSection.versionIsAvailable": {
-    "defaultMessage": "संस्करण {version} उपलब्ध है"
   },
   "userMessage.cancel": {
     "defaultMessage": "रद्द करें"

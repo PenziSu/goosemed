@@ -2405,20 +2405,8 @@
   "onboardingSuccess.getStarted": {
     "defaultMessage": "시작하기"
   },
-  "onboardingSuccess.learnMore": {
-    "defaultMessage": "자세히 알아보기"
-  },
   "onboardingSuccess.localModelReady": {
     "defaultMessage": "로컬 모델 준비됨"
-  },
-  "onboardingSuccess.privacyDescription": {
-    "defaultMessage": "익명의 사용 데이터는 goose 개선에 도움이 됩니다. 대화, 코드 또는 개인 데이터는 수집하지 않습니다."
-  },
-  "onboardingSuccess.privacyTitle": {
-    "defaultMessage": "개인정보 보호"
-  },
-  "onboardingSuccess.shareUsageData": {
-    "defaultMessage": "익명의 사용 데이터 공유"
   },
   "parameterInput.defaultValue": {
     "defaultMessage": "기본값"
@@ -2563,36 +2551,6 @@
   },
   "permissionSetting.permissionRulesDescription": {
     "defaultMessage": "응답에 컨텍스트를 추가하고 지시하는 데 도움이 되도록 제공업체에게 전달되는 숨겨진 지침입니다."
-  },
-  "privacyInfoModal.collectErrors": {
-    "defaultMessage": "오류 유형(예: 'rate_limit', 'auth' - 세부정보 없음)"
-  },
-  "privacyInfoModal.collectExtensions": {
-    "defaultMessage": "익스텐션 및 도구 사용 횟수(이름만)"
-  },
-  "privacyInfoModal.collectOs": {
-    "defaultMessage": "운영 체제, 버전 및 아키텍처"
-  },
-  "privacyInfoModal.collectProvider": {
-    "defaultMessage": "사용된 제공업체 및 모델"
-  },
-  "privacyInfoModal.collectSession": {
-    "defaultMessage": "세션 지표(기간, 상호 작용 횟수, 토큰 사용량)"
-  },
-  "privacyInfoModal.collectVersion": {
-    "defaultMessage": "goose 버전 및 설치 방법"
-  },
-  "privacyInfoModal.description": {
-    "defaultMessage": "익명의 사용 데이터는 goose가 어떻게 사용되는지 이해하고 개선이 필요한 부분을 파악하는 데 도움이 됩니다."
-  },
-  "privacyInfoModal.neverCollect": {
-    "defaultMessage": "대화, 코드, 도구 인수, 오류 메시지 또는 개인 데이터는 수집하지 않습니다. 언제든지 설정에서 이 설정을 변경할 수 있습니다."
-  },
-  "privacyInfoModal.title": {
-    "defaultMessage": "개인정보 보호 세부정보"
-  },
-  "privacyInfoModal.whatWeCollect": {
-    "defaultMessage": "수집하는 항목:"
   },
   "progressiveMessageList.loadingMessages": {
     "defaultMessage": "메시지 로드 중... ({renderedCount}/{totalCount})"
@@ -4079,12 +4037,6 @@
   "settings.theme.title": {
     "defaultMessage": "테마"
   },
-  "settings.updates.description": {
-    "defaultMessage": "goose가 최상의 상태로 실행되도록 업데이트를 확인하고 설치합니다."
-  },
-  "settings.updates.title": {
-    "defaultMessage": "업데이트"
-  },
   "settings.version.title": {
     "defaultMessage": "버전"
   },
@@ -4397,45 +4349,6 @@
   "switchModelModal.useOtherProvider": {
     "defaultMessage": "다른 제공업체 이용"
   },
-  "telemetryConsentPrompt.description": {
-    "defaultMessage": "goose 개선을 위해 익명의 사용 데이터를 공유하시겠습니까? 대화, 코드 또는 개인 데이터는 수집하지 않습니다."
-  },
-  "telemetryConsentPrompt.heading": {
-    "defaultMessage": "goose 개선에 도움을 주세요"
-  },
-  "telemetryConsentPrompt.learnMore": {
-    "defaultMessage": "자세히 알아보기"
-  },
-  "telemetryConsentPrompt.optIn": {
-    "defaultMessage": "예, 익명의 사용 데이터를 공유합니다"
-  },
-  "telemetryConsentPrompt.optOut": {
-    "defaultMessage": "아니요"
-  },
-  "telemetrySettings.configErrorTitle": {
-    "defaultMessage": "구성 오류"
-  },
-  "telemetrySettings.description": {
-    "defaultMessage": "데이터 사용 방식을 관리합니다."
-  },
-  "telemetrySettings.learnMore": {
-    "defaultMessage": "자세히 알아보기"
-  },
-  "telemetrySettings.loadError": {
-    "defaultMessage": "원격 분석 설정을 로드하지 못했습니다."
-  },
-  "telemetrySettings.title": {
-    "defaultMessage": "개인정보 보호"
-  },
-  "telemetrySettings.toggleDescription": {
-    "defaultMessage": "익명 사용 통계를 공유하여 goose 개선에 도움을 주세요."
-  },
-  "telemetrySettings.toggleLabel": {
-    "defaultMessage": "익명 사용 데이터"
-  },
-  "telemetrySettings.updateError": {
-    "defaultMessage": "원격 분석 설정을 업데이트하지 못했습니다."
-  },
   "themeSelector.aura": {
     "defaultMessage": "Aura"
   },
@@ -4510,63 +4423,6 @@
   },
   "toolConfirmation.gooseWouldLikeToCallWithName": {
     "defaultMessage": "goose가 {toolName}을 호출하려고 합니다. 허용하시겠습니까?"
-  },
-  "updateSection.autoDownload": {
-    "defaultMessage": "goose가 백그라운드에서 업데이트를 다운로드하며, 종료하거나 다시 시작할 때 설치합니다."
-  },
-  "updateSection.autoDownloadDisabledByEnv": {
-    "defaultMessage": "자동 다운로드는 GOOSE_DISABLE_AUTO_DOWNLOAD 환경 변수를 통해 비활성화되어 있습니다."
-  },
-  "updateSection.autoDownloadDisabledNote": {
-    "defaultMessage": "자동 다운로드가 비활성화되어 있습니다. 수동으로 다운로드하려면 \"지금 다운로드\"를 클릭하세요."
-  },
-  "updateSection.checkForUpdates": {
-    "defaultMessage": "업데이트 확인"
-  },
-  "updateSection.checking": {
-    "defaultMessage": "업데이트 확인 중..."
-  },
-  "updateSection.currentVersion": {
-    "defaultMessage": "현재 버전"
-  },
-  "updateSection.disableAutoDownload": {
-    "defaultMessage": "자동 업데이트 다운로드 비활성화"
-  },
-  "updateSection.disableAutoDownloadDesc": {
-    "defaultMessage": "활성화하면 goose가 새 버전을 알려주지만 자동으로 다운로드하지는 않습니다."
-  },
-  "updateSection.downloadNow": {
-    "defaultMessage": "지금 다운로드"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "업데이트가 다운로드되었으며 설치 준비가 완료되었습니다!"
-  },
-  "updateSection.downloadingProgress": {
-    "defaultMessage": "업데이트 다운로드 중... {percent}%"
-  },
-  "updateSection.downloadingUpdate": {
-    "defaultMessage": "업데이트 다운로드 중..."
-  },
-  "updateSection.installAndRestart": {
-    "defaultMessage": "설치 및 다시 시작"
-  },
-  "updateSection.latestVersion": {
-    "defaultMessage": "최신 버전을 사용 중입니다!"
-  },
-  "updateSection.loading": {
-    "defaultMessage": "로드 중..."
-  },
-  "updateSection.upToDate": {
-    "defaultMessage": "(최신 상태)"
-  },
-  "updateSection.updateAvailable": {
-    "defaultMessage": "업데이트가 있습니다!"
-  },
-  "updateSection.versionAvailable": {
-    "defaultMessage": "→ {version} 사용 가능"
-  },
-  "updateSection.versionIsAvailable": {
-    "defaultMessage": "버전 {version}을 사용할 수 있습니다."
   },
   "userMessage.cancel": {
     "defaultMessage": "취소"
