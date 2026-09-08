@@ -1,0 +1,96 @@
+{
+  "project": "GooseMed",
+  "branch": "security/medical-data-hardening-v1",
+  "updatedAt": "2026-09-08T01:21:23.000Z",
+  "columns": [
+    {
+      "id": "backlog",
+      "title": "待盤點",
+      "accent": "bg-slate-400",
+      "cards": [
+        {
+          "id": "inventory-data-behaviors",
+          "title": "盤點資料保存與傳送行為",
+          "summary": "以行為為主體，記錄觸發條件、資料內容、落地位置或目的地。",
+          "acceptance": "完成可追蹤的行為清單，禁止放入病患資料。",
+          "priority": "P1",
+          "updatedAt": "2026-09-08T00:00:00.000Z"
+        },
+        {
+          "id": "project-path-boundary",
+          "title": "定義專案目錄邊界",
+          "summary": "釐清檔案工具、Shell 與 Python 可操作的主機範圍。",
+          "acceptance": "測試絕對路徑、上一層路徑與 symbolic link。",
+          "priority": "P1",
+          "updatedAt": "2026-09-08T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "ready",
+      "title": "待開發",
+      "accent": "bg-amber-500",
+      "cards": [
+        {
+          "id": "compile-out-egress-features",
+          "title": "移除非必要對外功能",
+          "summary": "從預設建置排除 telemetry、OTEL、Nostr 與 update。",
+          "acceptance": "功能未編入執行檔，macOS 與 Windows 建置設定一致。",
+          "priority": "P0",
+          "updatedAt": "2026-09-08T00:00:00.000Z"
+        },
+        {
+          "id": "fail-closed-egress",
+          "title": "外連政策改為 fail-closed",
+          "summary": "除核准 LLM 與 MCP Endpoint 外，其餘目的地一律拒絕。",
+          "acceptance": "提示注入測試無法產生非白名單封包。",
+          "priority": "P0",
+          "updatedAt": "2026-09-08T00:00:00.000Z"
+        },
+        {
+          "id": "fixed-provider-mcp",
+          "title": "鎖定模型與 MCP",
+          "summary": "移除切換 Provider、任意 MCP、plugin 與 hook 的入口。",
+          "acceptance": "使用者無法從 UI、設定檔或啟動參數改用其他服務。",
+          "priority": "P0",
+          "updatedAt": "2026-09-08T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "in-progress",
+      "title": "進行中",
+      "accent": "bg-blue-600",
+      "cards": []
+    },
+    {
+      "id": "verification",
+      "title": "待驗證",
+      "accent": "bg-violet-600",
+      "cards": []
+    },
+    {
+      "id": "done",
+      "title": "完成",
+      "accent": "bg-teal-600",
+      "cards": [
+        {
+          "id": "repository-setup",
+          "title": "建立 Fork 與安全開發分支",
+          "summary": "設定 origin、官方 upstream 與獨立安全強化分支。",
+          "acceptance": "工作目錄乾淨且分支來源可追溯。",
+          "priority": "P0",
+          "updatedAt": "2026-09-08T00:00:00.000Z"
+        },
+        {
+          "id": "local-dashboard",
+          "title": "建立本機開發看板",
+          "summary": "用 Git 追蹤的地端 Kanban 管理修改與驗證進度。",
+          "acceptance": "可新增卡片、拖曳狀態並寫回 board.json。",
+          "priority": "P1",
+          "updatedAt": "2026-09-08T01:21:23.000Z"
+        }
+      ]
+    }
+  ]
+}
