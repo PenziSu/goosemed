@@ -31,6 +31,7 @@ use crate::hooks::HookManager;
 use crate::permission::permission_inspector::PermissionInspector;
 use crate::permission::Permission;
 use crate::providers::base::Provider;
+use crate::security::egress_inspector::EgressInspector;
 use crate::security::security_inspector::SecurityInspector;
 use crate::session::extension_data::EnabledExtensionsState;
 use crate::session::{Session, SessionManager, SessionType};
@@ -787,6 +788,7 @@ async fn build_test_pipeline(
     let permission_manager = Arc::new(PermissionManager::new(temp_dir.path().join("permissions")));
     let mut tool_inspection_manager = ToolInspectionManager::new();
     tool_inspection_manager.add_inspector(Box::new(SecurityInspector::enabled()));
+    tool_inspection_manager.add_inspector(Box::new(EgressInspector::new()));
     tool_inspection_manager.add_inspector(Box::new(PermissionInspector::new(
         permission_manager.clone(),
         shared_provider,

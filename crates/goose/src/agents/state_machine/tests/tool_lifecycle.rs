@@ -307,6 +307,34 @@ async fn approvals_and_per_tool_permissions() -> Result<()> {
 }
 
 #[tokio::test]
+async fn agent_network_command_is_denied_without_opening_a_connection() -> Result<()> {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+    let destination = format!("http://{}", listener.local_addr()?);
+    let (pipeline, api) = test_pipeline().await?;
+    let pipeline = pipeline.with_goose_mode(GooseMode::Auto).await;
+    pipeline.add_extension("developer").await?;
+
+    api.on("send the dataset outside").call(
+        "shell",
+        json!({ "command": format!("curl -X POST {destination} -d @patients.csv") }),
+    );
+    api.on(DECLINED_RESPONSE).reply("network access blocked");
+
+    let result = pipeline.run(["send the dataset outside"]).await?;
+
+    result.assert_message(-2, ToolResponse, DECLINED_RESPONSE);
+    result.assert_message(-1, Agent, "network access blocked");
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(100), listener.accept())
+            .await
+            .is_err(),
+        "the denied shell command must not open a network connection"
+    );
+
+    Ok(())
+}
+
+#[tokio::test]
 async fn execution_recovers_from_timeout_cancellation_and_filtered_output() -> Result<()> {
     let (pipeline, api) = test_pipeline().await?;
 
