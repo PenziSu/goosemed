@@ -5848,6 +5848,10 @@ echo start >> "$PLUGIN_ROOT/hook.log"
             "Tool inspection manager should contain security inspector"
         );
         assert!(
+            inspector_names.contains(&"egress"),
+            "Tool inspection manager should contain egress inspector"
+        );
+        assert!(
             inspector_names.contains(&"adversary"),
             "Tool inspection manager should contain adversary inspector"
         );
