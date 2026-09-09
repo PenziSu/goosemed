@@ -1,7 +1,7 @@
 //! This module contains tests for the scenario runner and various scenarios.
 //! You can set the GOOSE_TEST_PROVIDER to just run a specific provider.
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "goosemed")))]
 mod tests {
     use crate::scenario_tests::message_generator::{image, text};
     use crate::scenario_tests::mock_client::WEATHER_TYPE;

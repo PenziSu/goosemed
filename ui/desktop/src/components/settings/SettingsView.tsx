@@ -1,31 +1,15 @@
 import { ScrollArea } from '../ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { View, ViewOptions } from '../../utils/navigationUtils';
-import ModelsSection from './models/ModelsSection';
-import ExternalBackendSection from './app/ExternalBackendSection';
 import AppSettingsSection from './app/AppSettingsSection';
-import ConfigSettings from './config/ConfigSettings';
 import PromptsSettingsSection from './PromptsSettingsSection';
 import type { ExtensionConfig } from '../../types/extensions';
 import { MainPanelLayout } from '../Layout/MainPanelLayout';
-import {
-  Bot,
-  Share2,
-  Monitor,
-  MessageSquare,
-  FileText,
-  Keyboard,
-  HardDrive,
-  KeyRound,
-} from 'lucide-react';
+import { Monitor, MessageSquare, FileText, Keyboard } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import ChatSettingsSection from './chat/ChatSettingsSection';
 import KeyboardShortcutsSection from './keyboard/KeyboardShortcutsSection';
-import AuthSettingsSection from './auth/AuthSettingsSection';
-import LocalInferenceSection from './localInference/LocalInferenceSection';
-import { CONFIGURATION_ENABLED } from '../../updates';
 import { trackSettingsTabViewed } from '../../utils/analytics';
-import { useFeatures } from '../../contexts/FeaturesContext';
 import { defineMessages, useIntl } from '../../i18n';
 
 const i18n = defineMessages({
@@ -75,16 +59,14 @@ export type SettingsViewOptions = {
 
 export default function SettingsView({
   onClose,
-  setView,
   viewOptions,
 }: {
   onClose: () => void;
   setView: (view: View, viewOptions?: ViewOptions) => void;
   viewOptions: SettingsViewOptions;
 }) {
-  const [activeTab, setActiveTab] = useState('models');
+  const [activeTab, setActiveTab] = useState('chat');
   const hasTrackedInitialTab = useRef(false);
-  const { localInference } = useFeatures();
   const intl = useIntl();
 
   const handleTabChange = (tab: string) => {
@@ -98,32 +80,25 @@ export default function SettingsView({
       // Map section names to tab values
       const sectionToTab: Record<string, string> = {
         update: 'app',
-        models: 'models',
+        models: 'chat',
         modes: 'chat',
-        sharing: 'sharing',
+        sharing: 'app',
         styles: 'chat',
         tools: 'chat',
         app: 'app',
         chat: 'chat',
         prompts: 'prompts',
         keyboard: 'keyboard',
-        auth: 'auth',
-        'local-inference': 'local-inference',
+        auth: 'app',
+        'local-inference': 'chat',
       };
 
       const targetTab = sectionToTab[viewOptions.section];
-      if (targetTab && (targetTab !== 'local-inference' || localInference)) {
+      if (targetTab) {
         setActiveTab(targetTab);
       }
     }
-  }, [viewOptions.section, localInference]);
-
-  // Reset active tab if local-inference becomes unavailable
-  useEffect(() => {
-    if (!localInference && activeTab === 'local-inference') {
-      setActiveTab('models');
-    }
-  }, [localInference, activeTab]);
+  }, [viewOptions.section]);
 
   useEffect(() => {
     if (!hasTrackedInitialTab.current) {
@@ -166,35 +141,9 @@ export default function SettingsView({
             >
               <div className="px-1">
                 <TabsList className="w-full mb-2 justify-start overflow-x-auto flex-nowrap">
-                  <TabsTrigger
-                    value="models"
-                    className="flex gap-2"
-                    data-testid="settings-models-tab"
-                  >
-                    <Bot className="h-4 w-4" />
-                    {intl.formatMessage(i18n.tabModels)}
-                  </TabsTrigger>
-                  {localInference && (
-                    <TabsTrigger
-                      value="local-inference"
-                      className="flex gap-2"
-                      data-testid="settings-local-inference-tab"
-                    >
-                      <HardDrive className="h-4 w-4" />
-                      {intl.formatMessage(i18n.tabLocalInference)}
-                    </TabsTrigger>
-                  )}
                   <TabsTrigger value="chat" className="flex gap-2" data-testid="settings-chat-tab">
                     <MessageSquare className="h-4 w-4" />
                     {intl.formatMessage(i18n.tabChat)}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="sharing"
-                    className="flex gap-2"
-                    data-testid="settings-sharing-tab"
-                  >
-                    <Share2 className="h-4 w-4" />
-                    {intl.formatMessage(i18n.tabExternalBackend)}
                   </TabsTrigger>
                   <TabsTrigger
                     value="prompts"
@@ -212,10 +161,6 @@ export default function SettingsView({
                     <Keyboard className="h-4 w-4" />
                     {intl.formatMessage(i18n.tabKeyboard)}
                   </TabsTrigger>
-                  <TabsTrigger value="auth" className="flex gap-2" data-testid="settings-auth-tab">
-                    <KeyRound className="h-4 w-4" />
-                    {intl.formatMessage(i18n.tabAuth)}
-                  </TabsTrigger>
                   <TabsTrigger value="app" className="flex gap-2" data-testid="settings-app-tab">
                     <Monitor className="h-4 w-4" />
                     {intl.formatMessage(i18n.tabApp)}
@@ -225,35 +170,10 @@ export default function SettingsView({
 
               <ScrollArea className="flex-1 px-2">
                 <TabsContent
-                  value="models"
-                  className="mt-0 focus-visible:outline-none focus-visible:ring-0"
-                >
-                  <ModelsSection setView={setView} />
-                </TabsContent>
-
-                {localInference && (
-                  <TabsContent
-                    value="local-inference"
-                    className="mt-0 focus-visible:outline-none focus-visible:ring-0"
-                  >
-                    <LocalInferenceSection />
-                  </TabsContent>
-                )}
-
-                <TabsContent
                   value="chat"
                   className="mt-0 focus-visible:outline-none focus-visible:ring-0"
                 >
                   <ChatSettingsSection />
-                </TabsContent>
-
-                <TabsContent
-                  value="sharing"
-                  className="mt-0 focus-visible:outline-none focus-visible:ring-0"
-                >
-                  <div className="space-y-8 pb-8">
-                    <ExternalBackendSection />
-                  </div>
                 </TabsContent>
 
                 <TabsContent
@@ -271,18 +191,10 @@ export default function SettingsView({
                 </TabsContent>
 
                 <TabsContent
-                  value="auth"
-                  className="mt-0 focus-visible:outline-none focus-visible:ring-0"
-                >
-                  <AuthSettingsSection />
-                </TabsContent>
-
-                <TabsContent
                   value="app"
                   className="mt-0 focus-visible:outline-none focus-visible:ring-0"
                 >
                   <div className="space-y-8">
-                    {CONFIGURATION_ENABLED && <ConfigSettings />}
                     <AppSettingsSection scrollToSection={viewOptions.section} />
                   </div>
                 </TabsContent>

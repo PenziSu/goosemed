@@ -149,7 +149,8 @@ const mockSetSearchParams = vi.fn();
 vi.mock('react-router', () => ({
   HashRouter: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   Routes: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  Route: ({ element }: { element: React.ReactNode }) => element,
+  Route: ({ element, path }: { element: React.ReactNode; path?: string }) =>
+    path === '/' ? element : null,
   useNavigate: () => mockNavigate,
   useLocation: () => ({ state: null, pathname: '/' }),
   useSearchParams: () => [mockSearchParams, mockSetSearchParams],
@@ -171,6 +172,7 @@ const mockElectron = {
   createChatWindow: vi.fn(),
   getSetting: vi.fn().mockResolvedValue(null),
   setSetting: vi.fn().mockResolvedValue(undefined),
+  getIsFullScreen: vi.fn().mockResolvedValue(false),
 };
 
 // Mock appConfig
@@ -252,7 +254,7 @@ describe('App Component - Brand New State', () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('should handle deep links correctly when app is brand new', async () => {
+  it('does not show provider onboarding when runtime configuration is fixed', async () => {
     // Mock no provider configured
     mockElectron.getConfig.mockReturnValue({
       GOOSE_DEFAULT_PROVIDER: null,
@@ -270,7 +272,7 @@ describe('App Component - Brand New State', () => {
       expect(mockElectron.reactReady).toHaveBeenCalled();
     });
 
-    expect(screen.getByText(/^Welcome to goose/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Welcome to goose/)).not.toBeInTheDocument();
   });
 
   it('should not redirect when provider is configured', async () => {

@@ -14,6 +14,11 @@ pub fn model_config_from_user_config(
     provider_name: &str,
     model_name: impl AsRef<str>,
 ) -> Result<ModelConfig> {
+    #[cfg(feature = "goosemed")]
+    {
+        crate::goosemed::ensure_provider(provider_name)?;
+        crate::goosemed::ensure_model(model_name.as_ref())?;
+    }
     let model = base_model_config_from_user_config(provider_name, model_name.as_ref())?;
     materialize_model_config(provider_name, model)
 }
@@ -25,6 +30,11 @@ pub fn model_config_from_user_config_with_session_settings(
     request_params: Option<HashMap<String, Value>>,
     _context_limit: Option<usize>,
 ) -> Result<ModelConfig> {
+    #[cfg(feature = "goosemed")]
+    {
+        crate::goosemed::ensure_provider(provider_name)?;
+        crate::goosemed::ensure_model(model_name.as_ref())?;
+    }
     let config = Config::global();
     let model = base_model_config_from_user_config(provider_name, model_name.as_ref())?;
     let model = materialize_model_config_inner(model, provider_name, false)?
@@ -35,6 +45,11 @@ pub fn model_config_from_user_config_with_session_settings(
 }
 
 pub fn materialize_model_config(provider_name: &str, model: ModelConfig) -> Result<ModelConfig> {
+    #[cfg(feature = "goosemed")]
+    {
+        crate::goosemed::ensure_provider(provider_name)?;
+        crate::goosemed::ensure_model(&model.model_name)?;
+    }
     let model = materialize_model_config_inner(model, provider_name, true)?;
     Ok(apply_canonical_limits(provider_name, model))
 }
@@ -228,6 +243,41 @@ fn parse_yaml_bool_config(key: &str, value: serde_yaml::Value) -> Result<bool> {
             serde_yaml::to_string(&other).unwrap_or_else(|_| "<unprintable>".to_string()).trim()
         ))
         }
+    }
+}
+
+#[cfg(all(test, feature = "goosemed"))]
+mod goosemed_tests {
+    use super::*;
+
+    #[test]
+    fn session_model_override_cannot_escape_the_fixed_provider_and_model() {
+        let previous = ModelConfig::new(crate::goosemed::FIXED_MODEL);
+
+        assert!(model_config_from_user_config_with_session_settings(
+            crate::goosemed::FIXED_PROVIDER,
+            crate::goosemed::FIXED_MODEL,
+            Some(&previous),
+            None,
+            None,
+        )
+        .is_ok());
+        assert!(model_config_from_user_config_with_session_settings(
+            "anthropic",
+            crate::goosemed::FIXED_MODEL,
+            Some(&previous),
+            None,
+            None,
+        )
+        .is_err());
+        assert!(model_config_from_user_config_with_session_settings(
+            crate::goosemed::FIXED_PROVIDER,
+            "gpt-4o",
+            Some(&previous),
+            None,
+            None,
+        )
+        .is_err());
     }
 }
 

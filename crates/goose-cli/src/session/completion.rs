@@ -1,5 +1,5 @@
 use goose::agents::execute_commands::list_commands;
-use goose::config::{Config, GooseMode};
+use goose::config::GooseMode;
 use rustyline::completion::{Completer, FilenameCompleter, Pair};
 use rustyline::highlight::{CmdKind, Highlighter};
 use rustyline::hint::Hinter;
@@ -146,91 +146,6 @@ impl GooseCompleter {
         Ok((pos, candidates))
     }
 
-    fn complete_model_names(&self, line: &str) -> Result<(usize, Vec<Pair>)> {
-        let after_cmd = line.strip_prefix("/model").unwrap_or("").trim_start();
-
-        if after_cmd == "--provider" || after_cmd.starts_with("--provider ") {
-            let flag_rest = after_cmd.strip_prefix("--provider").unwrap_or("").trim();
-            if after_cmd == "--provider" {
-                return Ok((line.len(), vec![]));
-            }
-
-            let parts: Vec<&str> = flag_rest.split_whitespace().collect();
-            let trailing_space = after_cmd.ends_with(' ');
-
-            if parts.is_empty() || (parts.len() == 1 && !trailing_space) {
-                let partial = if parts.is_empty() { "" } else { parts[0] };
-                let cache = self.completion_cache.read().unwrap();
-                let candidates: Vec<Pair> = cache
-                    .provider_names
-                    .iter()
-                    .filter(|name| name.starts_with(partial))
-                    .map(|name| Pair {
-                        display: name.clone(),
-                        replacement: format!("{} ", name),
-                    })
-                    .collect();
-                let pos = line.len() - partial.len();
-                return Ok((pos, candidates));
-            }
-
-            let provider_name = parts[0];
-            let partial = if parts.len() > 1 && !trailing_space {
-                parts[1]
-            } else {
-                ""
-            };
-            return self.models_completion_from_cache(provider_name, partial, line);
-        }
-
-        if after_cmd.starts_with("--") {
-            let flag_partial = &after_cmd;
-            if "--provider".starts_with(flag_partial) {
-                return Ok((
-                    line.len() - flag_partial.len(),
-                    vec![Pair {
-                        display: "--provider".to_string(),
-                        replacement: "--provider ".to_string(),
-                    }],
-                ));
-            }
-            return Ok((line.len(), vec![]));
-        }
-
-        let current_provider = {
-            let cache = self.completion_cache.read().unwrap();
-            if cache.current_session_provider.is_empty() {
-                Config::global().get_goose_provider().unwrap_or_default()
-            } else {
-                cache.current_session_provider.clone()
-            }
-        };
-        self.models_completion_from_cache(&current_provider, after_cmd, line)
-    }
-
-    fn models_completion_from_cache(
-        &self,
-        provider_name: &str,
-        partial: &str,
-        full_line: &str,
-    ) -> Result<(usize, Vec<Pair>)> {
-        let cache = self.completion_cache.read().unwrap();
-        let models = cache.provider_models.get(provider_name);
-        let candidates: Vec<Pair> = match models {
-            Some(names) if !names.is_empty() => names
-                .iter()
-                .filter(|name| name.starts_with(partial))
-                .map(|name| Pair {
-                    display: name.clone(),
-                    replacement: format!("{} ", name),
-                })
-                .collect(),
-            _ => vec![],
-        };
-        let pos = full_line.len() - partial.len();
-        Ok((pos, candidates))
-    }
-
     /// Complete slash commands
     fn complete_slash_commands(&self, line: &str) -> Result<(usize, Vec<Pair>)> {
         let mut commands = vec![
@@ -239,10 +154,7 @@ impl GooseCompleter {
             "/help".to_string(),
             "/?".to_string(),
             "/t".to_string(),
-            "/extension".to_string(),
-            "/builtin".to_string(),
             "/mode".to_string(),
-            "/model".to_string(),
             "/recipe".to_string(),
             "/new".to_string(),
         ];
@@ -486,10 +398,6 @@ impl Completer for GooseCompleter {
                 }
             }
 
-            if line.starts_with("/model") {
-                return self.complete_model_names(line);
-            }
-
             if line.starts_with("/mode") {
                 return self.complete_mode_flags(line);
             }
@@ -673,8 +581,8 @@ mod tests {
         // Test partial match
         let (pos, candidates) = completer.complete_slash_commands("/e").unwrap();
         assert_eq!(pos, 0);
-        // There might be multiple commands starting with "e" like "/exit" and "/extension"
-        assert!(!candidates.is_empty());
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0].display, "/exit");
 
         // Test multiple matches
         let (pos, candidates) = completer.complete_slash_commands("/").unwrap();
@@ -705,94 +613,6 @@ mod tests {
         assert_eq!(candidates.len(), 1);
         assert_eq!(candidates[0].display, "/new");
         assert_eq!(candidates[0].replacement, "/new ");
-    }
-
-    #[test]
-    fn test_complete_model_names() {
-        let cache = create_test_cache();
-        let completer = GooseCompleter::new(cache);
-
-        let (pos, candidates) = completer
-            .complete_model_names("/model --provider ")
-            .unwrap();
-        assert_eq!(pos, "/model --provider ".len());
-        assert!(candidates.len() >= 3);
-        assert!(candidates.iter().any(|c| c.display == "anthropic"));
-        assert!(candidates.iter().any(|c| c.display == "openai"));
-        assert!(candidates.iter().any(|c| c.display == "zai"));
-
-        let (pos, candidates) = completer
-            .complete_model_names("/model --provider a")
-            .unwrap();
-        assert_eq!(pos, "/model --provider ".len());
-        assert_eq!(candidates.len(), 1);
-        assert_eq!(candidates[0].display, "anthropic");
-
-        let (pos, candidates) = completer
-            .complete_model_names("/model --provider anthropic ")
-            .unwrap();
-        assert_eq!(pos, "/model --provider anthropic ".len());
-        assert_eq!(candidates.len(), 2);
-        assert!(candidates.iter().any(|c| c.display == "claude-sonnet-4"));
-
-        let (pos, candidates) = completer
-            .complete_model_names("/model --provider anthropic claude-s")
-            .unwrap();
-        assert_eq!(pos, "/model --provider anthropic ".len());
-        assert_eq!(candidates.len(), 1);
-        assert_eq!(candidates[0].display, "claude-sonnet-4");
-
-        let (pos, candidates) = completer.complete_model_names("/model --p").unwrap();
-        assert_eq!(pos, "/model ".len());
-        assert_eq!(candidates.len(), 1);
-        assert_eq!(candidates[0].display, "--provider");
-    }
-
-    #[test]
-    fn test_complete_model_names_edge_cases() {
-        let cache = create_test_cache();
-        let completer = GooseCompleter::new(cache);
-
-        let (pos, candidates) = completer
-            .complete_model_names("/model --provider z")
-            .unwrap();
-        assert_eq!(pos, "/model --provider ".len());
-        assert_eq!(candidates.len(), 1);
-        assert_eq!(candidates[0].display, "zai");
-
-        let (pos, candidates) = completer
-            .complete_model_names("/model --provider zai ")
-            .unwrap();
-        assert_eq!(pos, "/model --provider zai ".len());
-        assert_eq!(candidates.len(), 1);
-        assert_eq!(candidates[0].display, "glm-4.5");
-
-        let (_pos, candidates) = completer
-            .complete_model_names("/model --provider nonexistent ")
-            .unwrap();
-        assert!(candidates.is_empty());
-
-        let (_pos, candidates) = completer
-            .complete_model_names("/model --provider anthropic nonexistent_model")
-            .unwrap();
-        assert!(candidates.is_empty());
-
-        let (_pos, candidates) = completer.complete_model_names("/model --xyz").unwrap();
-        assert!(candidates.is_empty());
-
-        let (_pos, candidates) = completer
-            .complete_model_names("/model --provider nosuchprovider")
-            .unwrap();
-        assert!(candidates.is_empty());
-
-        let (_pos, candidates) = completer.complete_model_names("/model ").unwrap();
-        assert!(candidates.iter().any(|c| c.display == "claude-sonnet-4"));
-        assert!(candidates.iter().any(|c| c.display == "claude-haiku-4"));
-
-        let (pos, candidates) = completer.complete_model_names("/model claude-s").unwrap();
-        assert_eq!(pos, "/model ".len());
-        assert_eq!(candidates.len(), 1);
-        assert_eq!(candidates[0].display, "claude-sonnet-4");
     }
 
     #[test]

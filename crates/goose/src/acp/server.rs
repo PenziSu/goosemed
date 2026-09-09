@@ -19,7 +19,9 @@ use crate::agents::{
     Agent, AgentConfig, ExtensionConfig, ExtensionLoadResult, GoosePlatform, SessionConfig,
 };
 use crate::config::base::CONFIG_YAML_NAME;
-use crate::config::extensions::{configured_enabled_state, get_enabled_extensions_with_config};
+use crate::config::extensions::configured_enabled_state;
+#[cfg(not(feature = "goosemed"))]
+use crate::config::extensions::get_enabled_extensions_with_config;
 use crate::config::paths::Paths;
 use crate::config::permission::PermissionManager;
 use crate::config::{Config, GooseMode};
@@ -433,6 +435,7 @@ fn spawn_session_name_update_notifier(
     tx
 }
 
+#[cfg_attr(feature = "goosemed", allow(dead_code))]
 fn extract_timeout_from_meta(meta: &Option<Meta>) -> Option<u64> {
     meta.as_ref()
         .and_then(|m| m.get("timeout"))
@@ -500,6 +503,7 @@ fn extract_use_login_shell_path(args: &InitializeRequest) -> bool {
         .unwrap_or(false)
 }
 
+#[cfg_attr(feature = "goosemed", allow(dead_code))]
 fn mcp_server_to_extension_config(mcp_server: McpServer) -> Result<ExtensionConfig, String> {
     match mcp_server {
         McpServer::Stdio(stdio) => {
@@ -544,6 +548,7 @@ fn mcp_server_to_extension_config(mcp_server: McpServer) -> Result<ExtensionConf
     }
 }
 
+#[cfg_attr(feature = "goosemed", allow(dead_code))]
 fn add_mcp_servers(
     extensions: &mut Vec<ExtensionConfig>,
     mcp_servers: Vec<McpServer>,
@@ -567,6 +572,7 @@ fn enabled_extensions_data(
     Ok(extension_data)
 }
 
+#[cfg_attr(feature = "goosemed", allow(dead_code))]
 fn selected_builtin_extensions(
     config: &Config,
     builtin_selection: &AcpBuiltinSelection,
@@ -594,28 +600,45 @@ fn initial_session_extensions(
     goose_extensions: Option<Vec<GooseExtension>>,
     recipe_extensions: Option<&[ExtensionConfig]>,
 ) -> Result<Vec<ExtensionConfig>, agent_client_protocol::Error> {
-    let mut extensions = selected_builtin_extensions(config, builtin_selection);
-
-    if let Some(recipe_extensions) = recipe_extensions {
-        for extension in recipe_extensions {
-            push_or_replace_extension(&mut extensions, extension.clone());
-        }
-    } else if let Some(goose_extensions) = goose_extensions {
-        for extension in extensions::goose_extensions_to_configs(goose_extensions)? {
-            push_or_replace_extension(&mut extensions, extension);
-        }
-    } else {
-        for extension in get_enabled_extensions_with_config(config) {
-            push_or_replace_extension(&mut extensions, extension);
-        }
-        for extension in crate::plugins::mcp_servers::enabled_plugin_mcp_servers(Some(project_root))
-        {
-            push_or_replace_extension(&mut extensions, extension);
-        }
-        add_mcp_servers(&mut extensions, mcp_servers)?;
+    #[cfg(feature = "goosemed")]
+    {
+        let _ = (
+            config,
+            builtin_selection,
+            project_root,
+            mcp_servers,
+            goose_extensions,
+            recipe_extensions,
+        );
+        Ok(crate::goosemed::fixed_extensions())
     }
 
-    Ok(extensions)
+    #[cfg(not(feature = "goosemed"))]
+    {
+        let mut extensions = selected_builtin_extensions(config, builtin_selection);
+
+        if let Some(recipe_extensions) = recipe_extensions {
+            for extension in recipe_extensions {
+                push_or_replace_extension(&mut extensions, extension.clone());
+            }
+        } else if let Some(goose_extensions) = goose_extensions {
+            for extension in extensions::goose_extensions_to_configs(goose_extensions)? {
+                push_or_replace_extension(&mut extensions, extension);
+            }
+        } else {
+            for extension in get_enabled_extensions_with_config(config) {
+                push_or_replace_extension(&mut extensions, extension);
+            }
+            for extension in
+                crate::plugins::mcp_servers::enabled_plugin_mcp_servers(Some(project_root))
+            {
+                push_or_replace_extension(&mut extensions, extension);
+            }
+            add_mcp_servers(&mut extensions, mcp_servers)?;
+        }
+
+        Ok(extensions)
+    }
 }
 
 fn push_or_replace_extension(extensions: &mut Vec<ExtensionConfig>, extension: ExtensionConfig) {
@@ -1187,6 +1210,13 @@ impl GooseAcpAgent {
             session_needs_update = true;
         }
 
+        #[cfg(feature = "goosemed")]
+        if !mcp_servers.is_empty() {
+            return Err(agent_client_protocol::Error::invalid_params()
+                .data("client-supplied MCP servers are disabled by the GooseMed security policy"));
+        }
+
+        #[cfg(not(feature = "goosemed"))]
         if !mcp_servers.is_empty() {
             let mut stored_extensions =
                 EnabledExtensionsState::from_extension_data(&session.extension_data)
@@ -2876,6 +2906,43 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "goosemed")]
+    #[test]
+    fn goosemed_new_session_ignores_client_extensions() {
+        let (config, _c, _s) = config_with_yaml("");
+        let project_root = tempfile::tempdir().unwrap();
+        let untrusted = GooseExtension::Mcp {
+            server: Box::new(McpServer::Http(McpServerHttp::new(
+                "untrusted",
+                "https://outside.example/mcp",
+            ))),
+            env_keys: Vec::new(),
+            description: None,
+            timeout: None,
+            socket: None,
+            client_id: None,
+            client_secret_key: None,
+            scopes: Vec::new(),
+            bundled: None,
+            available_tools: None,
+        };
+
+        let extensions = initial_session_extensions(
+            &config,
+            &explicit_builtin("github"),
+            project_root.path(),
+            vec![McpServer::Http(McpServerHttp::new(
+                "client-mcp",
+                "https://outside.example/client",
+            ))],
+            Some(vec![untrusted]),
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(extensions, crate::goosemed::fixed_extensions());
+    }
+
     #[test]
     fn requested_builtins_default_to_developer() {
         let selected = AcpBuiltinSelection::from_requested(Vec::new());
@@ -2890,6 +2957,7 @@ mod tests {
         assert_eq!(selected.explicit, vec!["github"]);
     }
 
+    #[cfg(not(feature = "goosemed"))]
     #[test]
     fn new_session_mcp_is_additive_to_enabled_config_extensions() {
         let (config, _c, _s) = config_with_yaml(
@@ -2923,6 +2991,7 @@ extensions:
             .any(|extension| extension.name() == "zed-mcp"));
     }
 
+    #[cfg(not(feature = "goosemed"))]
     #[test]
     fn new_session_mcp_does_not_enable_disabled_default_builtin() {
         let (config, _c, _s) = config_with_yaml(

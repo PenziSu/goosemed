@@ -3,7 +3,6 @@ import { IpcRendererEvent } from 'electron';
 import { HashRouter, Routes, Route, useNavigate, useLocation, useSearchParams } from 'react-router';
 import { importNostrSessionFromDeepLink } from './sessionLinks';
 import { ErrorUI } from './components/ErrorBoundary';
-import { ExtensionInstallModal } from './components/ExtensionInstallModal';
 import RecipeParamsModalContainer from './components/RecipeParamsModalContainer';
 import { isRecipeParamsCancelled, isRecipeParameterScopesUnsupported } from './acp/errors';
 import { toast, ToastContainer } from 'react-toastify';
@@ -24,7 +23,6 @@ interface PairRouteState {
 import SettingsView, { SettingsViewOptions } from './components/settings/SettingsView';
 import SessionsView from './components/sessions/SessionsView';
 import SchedulesView from './components/schedule/SchedulesView';
-import ProviderSettings from './components/settings/providers/ProviderSettingsPage';
 import { AppLayout } from './components/Layout/AppLayout';
 import { ChatProvider, DEFAULT_CHAT_TITLE } from './contexts/ChatContext';
 import LauncherView from './components/LauncherView';
@@ -36,10 +34,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { FeaturesProvider } from './contexts/FeaturesContext';
 import PermissionSettingsView from './components/settings/permission/PermissionSetting';
 
-import ExtensionsView, { ExtensionsViewOptions } from './components/extensions/ExtensionsView';
 import RecipesView from './components/recipes/RecipesView';
-import SkillsView from './components/skills/SkillsView';
-import AppsView from './components/apps/AppsView';
 import StandaloneAppView from './components/apps/StandaloneAppView';
 import { View, ViewOptions } from './utils/navigationUtils';
 
@@ -212,10 +207,6 @@ const RecipesRoute = () => {
   return <RecipesView />;
 };
 
-const SkillsRoute = () => {
-  return <SkillsView />;
-};
-
 const PermissionRoute = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -256,60 +247,12 @@ const PermissionRoute = () => {
   );
 };
 
-const ConfigureProvidersRoute = () => {
-  const navigate = useNavigate();
-
-  return (
-    <div className="w-screen h-screen bg-background-primary">
-      <ProviderSettings
-        onClose={() => navigate('/settings', { state: { section: 'models' } })}
-        isOnboarding={false}
-      />
-    </div>
-  );
-};
-
-const ExtensionsRoute = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Get viewOptions from location.state or history.state (for deep link extensions)
-  const viewOptions =
-    (location.state as ExtensionsViewOptions) ||
-    (window.history.state as ExtensionsViewOptions) ||
-    {};
-
-  return (
-    <ExtensionsView
-      onClose={() => navigate(-1)}
-      setView={(view, options) => {
-        switch (view) {
-          case 'chat':
-            navigate('/');
-            break;
-          case 'pair':
-            navigate('/pair', { state: options });
-            break;
-          case 'settings':
-            navigate('/settings', { state: options });
-            break;
-          default:
-            navigate('/');
-        }
-      }}
-      viewOptions={viewOptions}
-    />
-  );
-};
-
 export function AppInner() {
   const [fatalError, setFatalError] = useState<string | null>(null);
 
   const nostrImportInFlight = useRef<string | null>(null);
 
   const navigate = useNavigate();
-  const setView = useNavigation();
-
   const [chat, setChat] = useState<ChatType>({
     sessionId: '',
     name: DEFAULT_CHAT_TITLE,
@@ -388,8 +331,6 @@ export function AppInner() {
       window.removeEventListener(AppEvents.SESSION_DELETED, handleSessionDeleted);
     };
   }, []);
-
-  const { addExtension } = useConfig();
 
   useEffect(() => {
     try {
@@ -627,14 +568,12 @@ export function AppInner() {
         closeOnClick
         pauseOnHover
       />
-      <ExtensionInstallModal addExtension={addExtension} setView={setView} />
       <RecipeParamsModalContainer />
       <div className="relative w-screen h-screen overflow-hidden bg-background-secondary flex flex-col">
         <div className="titlebar-drag-region" />
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
           <Routes>
             <Route path="launcher" element={<LauncherView />} />
-            <Route path="configure-providers" element={<ConfigureProvidersRoute />} />
             <Route path="standalone-app" element={<StandaloneAppView />} />
             <Route
               path="/"
@@ -657,19 +596,9 @@ export function AppInner() {
                 }
               />
               <Route path="settings" element={<SettingsRoute />} />
-              <Route
-                path="extensions"
-                element={
-                  <ChatProvider chat={chat} setChat={setChat} contextKey="extensions">
-                    <ExtensionsRoute />
-                  </ChatProvider>
-                }
-              />
-              <Route path="apps" element={<AppsView />} />
               <Route path="sessions" element={<SessionsRoute />} />
               <Route path="schedules" element={<SchedulesRoute />} />
               <Route path="recipes" element={<RecipesRoute />} />
-              <Route path="skills" element={<SkillsRoute />} />
               <Route path="permission" element={<PermissionRoute />} />
             </Route>
           </Routes>

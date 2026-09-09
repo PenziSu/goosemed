@@ -47,10 +47,12 @@ use rmcp::model::{ErrorCode, ErrorData};
 use strum::VariantNames;
 
 use goose::config::paths::Paths;
+#[cfg(not(feature = "goosemed"))]
 use goose::config::providers;
 use goose::conversation::message::{
     ActionRequiredData, Message, MessageContent, ToolConfirmationRequest,
 };
+#[cfg(not(feature = "goosemed"))]
 use goose::providers::inventory::ProviderInventoryService;
 use goose::session::SessionManager;
 use rustyline::EditMode;
@@ -746,20 +748,6 @@ impl CliSession {
                 self.handle_message_input(&content, history, editor).await?;
             }
             InputResult::Exit => unreachable!("Exit is handled in the main loop"),
-            InputResult::AddExtension(cmd) => {
-                history.save(editor);
-                match self.add_extension(cmd.clone()).await {
-                    Ok(_) => output::render_extension_success(&cmd),
-                    Err(e) => output::render_extension_error(&cmd, &e.to_string()),
-                }
-            }
-            InputResult::AddBuiltin(names) => {
-                history.save(editor);
-                match self.add_builtin(names.clone()).await {
-                    Ok(_) => output::render_builtin_success(&names),
-                    Err(e) => output::render_builtin_error(&names, &e.to_string()),
-                }
-            }
             InputResult::ToggleTheme => {
                 history.save(editor);
                 self.handle_toggle_theme();
@@ -783,10 +771,6 @@ impl CliSession {
             InputResult::GooseMode(mode) => {
                 history.save(editor);
                 self.handle_goose_mode(&mode).await?;
-            }
-            InputResult::Model(options) => {
-                history.save(editor);
-                self.handle_model(options).await?;
             }
             InputResult::Plan(options) => {
                 self.handle_plan_mode(options).await?;
@@ -968,180 +952,6 @@ impl CliSession {
         self.agent.update_goose_mode(mode, &self.session_id).await?;
         config.set_goose_mode(mode)?;
         output::goose_mode_message(&format!("Goose mode set to '{mode}'"));
-        Ok(())
-    }
-
-    async fn handle_model(&mut self, options: input::ModelCommandOptions) -> Result<()> {
-        let provider = self.agent.provider().await?;
-        let current_provider_name = provider.get_name().to_string();
-        let current_model_config = self
-            .agent
-            .model_config_for_session(&self.session_id)
-            .await?;
-        let current_model_name = current_model_config.model_name.clone();
-
-        if options.provider.is_none() && options.model.is_none() {
-            output::goose_mode_message(&format!(
-                "Current session model: '{}' (provider '{}')\n\
-                 Tip: use '/model <name>' to switch model, or '/model --provider <name> [model]' to switch provider.",
-                current_model_name, current_provider_name
-            ));
-            return Ok(());
-        }
-
-        let requested_provider = options
-            .provider
-            .as_deref()
-            .map(str::trim)
-            .filter(|s| !s.is_empty());
-        let target_provider_name = requested_provider.unwrap_or(&current_provider_name);
-
-        if options.provider.is_some() && requested_provider.is_none() {
-            output::render_error("Provider name is required after '--provider'.");
-            return Ok(());
-        }
-
-        let target_entry = match goose::providers::get_from_registry(target_provider_name).await {
-            Ok(entry) => entry,
-            Err(_) => {
-                output::render_error(&format!(
-                    "Unknown provider '{}'. Use tab-completion to see available providers.",
-                    target_provider_name
-                ));
-                return Ok(());
-            }
-        };
-
-        if target_provider_name.ends_with("-acp") {
-            output::render_error(
-                "Session model switching is not supported for ACP providers in the CLI.",
-            );
-            return Ok(());
-        }
-
-        if provider.manages_own_context() {
-            output::render_error(&format!(
-                "Session model or provider switching is not supported for provider '{}' because it manages its own conversation context.",
-                current_provider_name
-            ));
-            return Ok(());
-        }
-
-        if options
-            .model
-            .as_deref()
-            .is_some_and(|model| model.split_whitespace().count() > 1)
-        {
-            output::render_error("Unexpected arguments after model name.");
-            return Ok(());
-        }
-
-        let target_model_name = match options.model.as_deref().map(str::trim) {
-            Some(m) if !m.is_empty() => m.to_string(),
-            _ => {
-                if target_provider_name == current_provider_name {
-                    current_model_name.clone()
-                } else {
-                    let known: Vec<&str> = target_entry
-                        .metadata()
-                        .known_models
-                        .iter()
-                        .map(|m| m.name.as_str())
-                        .collect();
-                    if known.contains(&current_model_name.as_str()) {
-                        current_model_name.clone()
-                    } else {
-                        target_entry.metadata().default_model.clone()
-                    }
-                }
-            }
-        };
-
-        let new_model_config = build_switched_model_config(
-            target_provider_name,
-            &target_model_name,
-            &current_model_config,
-        )?;
-
-        let configured_effort = Config::global().get_goose_thinking_effort();
-        let new_effort = new_model_config.thinking_effort().or(configured_effort);
-        let current_effort = current_model_config.thinking_effort().or(configured_effort);
-        let provider_unchanged = target_provider_name == current_provider_name;
-        if provider_unchanged
-            && new_model_config.model_name == current_model_config.model_name
-            && new_effort == current_effort
-        {
-            output::goose_mode_message(&format!(
-                "Session already using model '{}' for provider '{}'",
-                current_model_name, current_provider_name
-            ));
-            return Ok(());
-        }
-
-        let current_context_limit = goose::context_limit::get_context_limit(
-            provider.as_ref(),
-            &current_model_config.model_name,
-        )
-        .await?;
-
-        let extensions = self.agent.get_extension_configs().await;
-        let new_provider = match goose::providers::create(target_provider_name, extensions).await {
-            Ok(p) => p,
-            Err(e) => {
-                output::render_error(&format!(
-                    "Cannot switch to provider '{}': {}\n\
-                         Set credentials via `goose configure` or the appropriate environment variable.\n\
-                         Session continues with current provider '{}'.",
-                    target_provider_name, e, current_provider_name
-                ));
-                return Ok(());
-            }
-        };
-
-        if new_provider.manages_own_context() {
-            output::render_error(&format!(
-                "Session provider switching is not supported for '{}' because it manages its own conversation context.",
-                target_provider_name
-            ));
-            return Ok(());
-        }
-
-        let new_context_limit = goose::context_limit::get_context_limit(
-            new_provider.as_ref(),
-            &new_model_config.model_name,
-        )
-        .await?;
-        if new_context_limit < current_context_limit {
-            eprintln!(
-                "{}",
-                console::style(format!(
-                    "Warning: '{}' has a smaller context window ({} tokens) than the current session ({} tokens). You may need to use /compact.",
-                    target_model_name, new_context_limit, current_context_limit
-                ))
-                .yellow()
-            );
-        }
-
-        self.agent
-            .update_provider(new_provider, new_model_config, &self.session_id)
-            .await?;
-
-        let mode = self.agent.goose_mode().await;
-        self.agent.update_goose_mode(mode, &self.session_id).await?;
-
-        self.update_completion_cache().await?;
-
-        if provider_unchanged {
-            output::goose_mode_message(&format!(
-                "Session model switched from '{}' to '{}' for provider '{}'",
-                current_model_name, target_model_name, current_provider_name
-            ));
-        } else {
-            output::goose_mode_message(&format!(
-                "Session switched from provider '{}' / model '{}' to provider '{}' / model '{}'",
-                current_provider_name, current_model_name, target_provider_name, target_model_name
-            ));
-        }
         Ok(())
     }
 
@@ -1967,8 +1777,10 @@ impl CliSession {
         let all_providers = goose::providers::providers().await;
         let session_provider = agent.provider().await?.get_name().to_string();
 
-        let provider_ids: Vec<String> = all_providers.iter().map(|(m, _)| m.name.clone()).collect();
+        #[cfg(not(feature = "goosemed"))]
         let inventory_models: HashMap<String, Vec<String>> = {
+            let provider_ids: Vec<String> =
+                all_providers.iter().map(|(m, _)| m.name.clone()).collect();
             let storage = SessionManager::instance().storage().clone();
             let inventory = ProviderInventoryService::new(storage);
             inventory
@@ -1983,8 +1795,12 @@ impl CliSession {
                 })
                 .collect()
         };
+        #[cfg(feature = "goosemed")]
+        let inventory_models: HashMap<String, Vec<String>> = HashMap::new();
 
+        #[cfg(not(feature = "goosemed"))]
         let config = Config::global();
+        #[cfg(not(feature = "goosemed"))]
         let configured_models: HashMap<String, String> = all_providers
             .iter()
             .filter_map(|(m, _)| {
@@ -1993,6 +1809,8 @@ impl CliSession {
                     .filter(|(_, model)| !model.is_empty())
             })
             .collect();
+        #[cfg(feature = "goosemed")]
+        let configured_models: HashMap<String, String> = HashMap::new();
 
         let mut cache = completion_cache.write().unwrap();
         cache.prompts.clear();
@@ -2902,21 +2720,6 @@ fn format_elapsed_time(duration: std::time::Duration) -> String {
     }
 }
 
-fn build_switched_model_config(
-    provider_name: &str,
-    model_name: &str,
-    current_model_config: &goose_providers::model::ModelConfig,
-) -> Result<goose_providers::model::ModelConfig> {
-    goose::model_config::model_config_from_user_config(provider_name, model_name)
-        .map(|config| {
-            config
-                .with_temperature(current_model_config.temperature)
-                .with_toolshim(current_model_config.toolshim)
-                .with_toolshim_model(current_model_config.toolshim_model.clone())
-        })
-        .map_err(|e| anyhow::anyhow!("Failed to create model configuration: {e}"))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3207,75 +3010,6 @@ mod tests {
             derive_extension_name_from_command("/usr/local/bin/srv", &[]),
             "srv"
         );
-    }
-
-    #[test]
-    fn test_build_switched_model_config_rebuilds_target_model_settings() {
-        let _guard = env_lock::lock_env([
-            ("GOOSE_MAX_TOKENS", None::<&str>),
-            ("GOOSE_TEMPERATURE", None::<&str>),
-            ("GOOSE_CONTEXT_LIMIT", None::<&str>),
-            ("GOOSE_TOOLSHIM", None::<&str>),
-            ("GOOSE_TOOLSHIM_OLLAMA_MODEL", None::<&str>),
-        ]);
-
-        let current_model_config = goose_providers::model::ModelConfig {
-            model_name: "gpt-4o".to_string(),
-            context_limit: Some(128_000),
-            temperature: Some(0.25),
-            max_tokens: Some(16_384),
-            toolshim: true,
-            toolshim_model: Some("qwen2.5-coder".to_string()),
-            request_params: Some(HashMap::from([(
-                "anthropic_beta".to_string(),
-                serde_json::json!(["output-128k-2025-02-19"]),
-            )])),
-            reasoning: Some(false),
-            supports_vision: Some(true),
-            request_headers: None,
-        };
-
-        let switched =
-            build_switched_model_config("openai", "gpt-5.4", &current_model_config).unwrap();
-        let expected = goose_providers::model::ModelConfig::new("gpt-5.4")
-            .with_canonical_limits("openai")
-            .with_temperature(Some(0.25))
-            .with_toolshim(true)
-            .with_toolshim_model(Some("qwen2.5-coder".to_string()));
-
-        assert_eq!(switched.model_name, expected.model_name);
-        assert_eq!(switched.context_limit, expected.context_limit);
-        assert_eq!(switched.max_tokens, expected.max_tokens);
-        assert_eq!(switched.request_params, expected.request_params);
-        assert_eq!(switched.reasoning, expected.reasoning);
-        assert_eq!(switched.temperature, Some(0.25));
-        assert!(switched.toolshim);
-        assert_eq!(switched.toolshim_model.as_deref(), Some("qwen2.5-coder"));
-    }
-
-    #[test]
-    fn test_build_switched_model_config_detects_effort_suffix_change() {
-        let _guard = env_lock::lock_env([
-            ("GOOSE_MAX_TOKENS", None::<&str>),
-            ("GOOSE_TEMPERATURE", None::<&str>),
-            ("GOOSE_CONTEXT_LIMIT", None::<&str>),
-            ("GOOSE_TOOLSHIM", None::<&str>),
-            ("GOOSE_TOOLSHIM_OLLAMA_MODEL", None::<&str>),
-            ("GOOSE_THINKING_EFFORT", None::<&str>),
-        ]);
-
-        let current = goose_providers::model::ModelConfig::new("gpt-5.4-high")
-            .with_canonical_limits("openai");
-        assert_eq!(current.model_name, "gpt-5.4");
-        assert_eq!(
-            current.thinking_effort(),
-            Some(goose_providers::thinking::ThinkingEffort::High)
-        );
-
-        let switched = build_switched_model_config("openai", "gpt-5.4", &current).unwrap();
-
-        assert_eq!(switched.model_name, current.model_name);
-        assert_ne!(switched.thinking_effort(), current.thinking_effort());
     }
 
     #[test]

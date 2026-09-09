@@ -1049,12 +1049,7 @@ async fn execute_job(
         )
         .await?;
 
-    let mut extensions = resolve_extensions_for_new_session(recipe.extensions.as_deref(), None);
-    if recipe.extensions.is_none() {
-        extensions.extend(crate::plugins::mcp_servers::enabled_plugin_mcp_servers(
-            std::env::current_dir().ok().as_deref(),
-        ));
-    }
+    let extensions = resolve_extensions_for_new_session(recipe.extensions.as_deref(), None);
     for ext in &extensions {
         agent.add_extension(ext.clone(), &session.id).await?;
     }

@@ -483,6 +483,19 @@ fn refresh_plan_to_response(refresh_plan: RefreshPlan) -> RefreshProviderInvento
     }
 }
 
+fn ensure_provider_mutation_allowed() -> Result<(), agent_client_protocol::Error> {
+    #[cfg(feature = "goosemed")]
+    {
+        Err(agent_client_protocol::Error::invalid_params()
+            .data("GooseMed provider and model are fixed at build time"))
+    }
+
+    #[cfg(not(feature = "goosemed"))]
+    {
+        Ok(())
+    }
+}
+
 impl GooseAcpAgent {
     pub(super) async fn on_list_providers(
         &self,
@@ -631,6 +644,7 @@ impl GooseAcpAgent {
         &self,
         req: CustomProviderCreateRequest,
     ) -> Result<CustomProviderCreateResponse, agent_client_protocol::Error> {
+        ensure_provider_mutation_allowed()?;
         let provider = normalize_custom_provider_upsert(req.provider, true)?;
         let config = declarative_providers::create_custom_provider(
             declarative_providers::CreateCustomProviderParams {
@@ -687,6 +701,7 @@ impl GooseAcpAgent {
         &self,
         req: CustomProviderUpdateRequest,
     ) -> Result<CustomProviderUpdateResponse, agent_client_protocol::Error> {
+        ensure_provider_mutation_allowed()?;
         let loaded = load_declarative_provider_for_client(&req.provider_id)?;
         if !loaded.is_editable {
             return Err(agent_client_protocol::Error::invalid_params()
@@ -759,6 +774,7 @@ impl GooseAcpAgent {
         &self,
         req: CustomProviderDeleteRequest,
     ) -> Result<CustomProviderDeleteResponse, agent_client_protocol::Error> {
+        ensure_provider_mutation_allowed()?;
         let loaded = load_declarative_provider_for_client(&req.provider_id)?;
         if !loaded.is_editable {
             return Err(agent_client_protocol::Error::invalid_params()
@@ -982,6 +998,7 @@ impl GooseAcpAgent {
         &self,
         req: ProviderConfigSaveRequest,
     ) -> Result<ProviderConfigChangeResponse, agent_client_protocol::Error> {
+        ensure_provider_mutation_allowed()?;
         let entry = crate::providers::get_from_registry(&req.provider_id)
             .await
             .invalid_params_err_ctx("Unknown provider")?;
@@ -1053,6 +1070,7 @@ impl GooseAcpAgent {
         &self,
         req: ProviderConfigDeleteRequest,
     ) -> Result<ProviderConfigChangeResponse, agent_client_protocol::Error> {
+        ensure_provider_mutation_allowed()?;
         let entry = crate::providers::get_from_registry(&req.provider_id)
             .await
             .invalid_params_err_ctx("Unknown provider")?;
@@ -1096,6 +1114,7 @@ impl GooseAcpAgent {
         &self,
         req: ProviderConfigAuthenticateRequest,
     ) -> Result<ProviderConfigChangeResponse, agent_client_protocol::Error> {
+        ensure_provider_mutation_allowed()?;
         let entry = crate::providers::get_from_registry(&req.provider_id)
             .await
             .invalid_params_err_ctx("Unknown provider")?;
@@ -1179,6 +1198,7 @@ impl GooseAcpAgent {
         &self,
         req: ProviderSecretDeleteRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        ensure_provider_mutation_allowed()?;
         match provider_secrets::delete_provider_secret(&req.id).await {
             Ok(()) => Ok(EmptyResponse {}),
             Err(provider_secrets::DeleteProviderSecretError::InvalidId(id)) => {
@@ -1256,7 +1276,13 @@ impl GooseAcpAgent {
 
 #[cfg(test)]
 mod tests {
-    use super::mask_secret_value;
+    use super::{ensure_provider_mutation_allowed, mask_secret_value};
+
+    #[cfg(feature = "goosemed")]
+    #[test]
+    fn goosemed_rejects_provider_mutation() {
+        assert!(ensure_provider_mutation_allowed().is_err());
+    }
 
     #[test]
     fn mask_secret_value_hides_suffix_and_never_reveals_majority() {

@@ -880,135 +880,15 @@ describe('RecipeFormFields', () => {
     });
   });
 
-  describe('Model and Extension Selection', () => {
-    it('renders model and extension selectors in advanced options', async () => {
+  describe('GooseMed fixed runtime configuration', () => {
+    it('does not render model or extension selectors', async () => {
       const user = userEvent.setup();
       renderWithIntl(<TestWrapper />);
 
       await expandAdvancedSection(user);
 
-      expect(screen.getByText('Provider (Optional)')).toBeInTheDocument();
-      expect(screen.getByText('Extensions (Optional)')).toBeInTheDocument();
-    });
-
-    it('allows selecting provider and model', async () => {
-      const user = userEvent.setup();
-      const onSubmit = vi.fn();
-      const TestComponent = () => {
-        const form = useForm({
-          defaultValues: {
-            title: 'Test Recipe',
-            description: 'Test',
-            instructions: 'Test',
-            prompt: 'Test',
-            activities: [],
-            parameters: [],
-            jsonSchema: '',
-            model: undefined,
-            provider: undefined,
-            extensions: undefined,
-            subRecipes: [],
-          } as RecipeFormData,
-          onSubmit: async ({ value }) => {
-            onSubmit(value);
-          },
-        });
-
-        return <RecipeFormFields form={form} />;
-      };
-
-      renderWithIntl(<TestComponent />);
-
-      await expandAdvancedSection(user);
-
-      expect(screen.getByText('Provider (Optional)')).toBeInTheDocument();
-    });
-
-    it('allows selecting extensions', async () => {
-      const user = userEvent.setup();
-      const TestComponent = () => {
-        const form = useForm({
-          defaultValues: {
-            title: 'Test Recipe',
-            description: 'Test',
-            instructions: 'Test',
-            prompt: 'Test',
-            activities: [],
-            parameters: [],
-            jsonSchema: '',
-            model: undefined,
-            provider: undefined,
-            extensions: undefined,
-            subRecipes: [],
-          } as RecipeFormData,
-          onSubmit: async ({ value }) => {
-            console.log('Form submitted:', value);
-          },
-        });
-
-        return <RecipeFormFields form={form} />;
-      };
-
-      renderWithIntl(<TestComponent />);
-
-      await expandAdvancedSection(user);
-
-      expect(screen.getByText('Extensions (Optional)')).toBeInTheDocument();
-    });
-
-    it('pre-fills model and provider from initial values', async () => {
-      const user = userEvent.setup();
-      const initialValues: Partial<RecipeFormData> = {
-        title: 'Test Recipe',
-        description: 'Test',
-        instructions: 'Test',
-        prompt: 'Test',
-        model: 'gpt-4o',
-        provider: 'openai',
-      };
-
-      const TestComponent = () => {
-        const form = useTestForm(initialValues);
-        return <RecipeFormFields form={form} />;
-      };
-
-      renderWithIntl(<TestComponent />);
-
-      await expandAdvancedSection(user);
-
-      expect(screen.getByText('Provider (Optional)')).toBeInTheDocument();
-    });
-
-    it('pre-fills extensions from initial values', async () => {
-      const user = userEvent.setup();
-      const initialValues: Partial<RecipeFormData> = {
-        title: 'Test Recipe',
-        description: 'Test',
-        instructions: 'Test',
-        prompt: 'Test',
-        extensions: [
-          {
-            type: 'builtin',
-            name: 'developer',
-            display_name: 'Developer',
-            timeout: 300,
-            bundled: true,
-            description: 'Developer extension',
-          },
-        ],
-      };
-
-      const TestComponent = () => {
-        const form = useTestForm(initialValues);
-        return <RecipeFormFields form={form} />;
-      };
-
-      renderWithIntl(<TestComponent />);
-
-      await expandAdvancedSection(user);
-
-      expect(screen.getByText('Extensions (Optional)')).toBeInTheDocument();
-      expect(screen.getByText('1 extension selected')).toBeInTheDocument();
+      expect(screen.queryByText('Provider (Optional)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Extensions (Optional)')).not.toBeInTheDocument();
     });
   });
 

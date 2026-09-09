@@ -167,6 +167,7 @@ pub struct OpenAiProvider {
     dynamic_models: Option<bool>,
     skip_canonical_filtering: bool,
     preserve_thinking_context: bool,
+    locked_model: Option<String>,
     #[serde(skip)]
     n_ctx_cache: Arc<Mutex<HashMap<String, CachedContextLimit>>>,
 }
@@ -188,6 +189,7 @@ pub struct OpenAiProviderBuilder {
     dynamic_models: Option<bool>,
     skip_canonical_filtering: bool,
     preserve_thinking_context: bool,
+    locked_model: Option<String>,
 }
 
 impl OpenAiProviderBuilder {
@@ -204,6 +206,7 @@ impl OpenAiProviderBuilder {
             dynamic_models: None,
             skip_canonical_filtering: false,
             preserve_thinking_context: false,
+            locked_model: None,
         }
     }
 
@@ -275,6 +278,11 @@ impl OpenAiProviderBuilder {
         self
     }
 
+    pub fn locked_model(mut self, model: impl Into<String>) -> Self {
+        self.locked_model = Some(model.into());
+        self
+    }
+
     pub fn build(self) -> OpenAiProvider {
         OpenAiProvider {
             api_client: self.api_client,
@@ -288,6 +296,7 @@ impl OpenAiProviderBuilder {
             dynamic_models: self.dynamic_models,
             skip_canonical_filtering: self.skip_canonical_filtering,
             preserve_thinking_context: self.preserve_thinking_context,
+            locked_model: self.locked_model,
             n_ctx_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
@@ -387,6 +396,7 @@ impl OpenAiProvider {
             dynamic_models: None,
             skip_canonical_filtering: false,
             preserve_thinking_context: false,
+            locked_model: None,
             n_ctx_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }
@@ -535,6 +545,21 @@ impl OpenAiProvider {
         }
 
         Self::should_use_responses_api(model_name, &self.base_path)
+    }
+
+    fn ensure_model_allowed(&self, model_name: &str) -> Result<(), ProviderError> {
+        if self
+            .locked_model
+            .as_deref()
+            .is_none_or(|allowed| allowed == model_name)
+        {
+            return Ok(());
+        }
+
+        Err(ProviderError::InvalidValue(format!(
+            "provider is locked to model '{}'",
+            self.locked_model.as_deref().unwrap_or_default()
+        )))
     }
 
     fn map_base_path(base_path: &str, target: &str, fallback: &str) -> String {
@@ -792,6 +817,8 @@ impl Provider for OpenAiProvider {
         messages: &[Message],
         tools: &[Tool],
     ) -> Result<MessageStream, ProviderError> {
+        self.ensure_model_allowed(&model_config.model_name)?;
+
         if self.should_use_responses_api_for_provider(&model_config.model_name) {
             let (wire_model, _) =
                 crate::formats::openai::extract_reasoning_effort(&model_config.model_name);
@@ -1035,8 +1062,18 @@ mod tests {
             dynamic_models: None,
             skip_canonical_filtering: false,
             preserve_thinking_context: false,
+            locked_model: None,
             n_ctx_cache: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+
+    #[test]
+    fn locked_provider_rejects_a_different_model() {
+        let mut provider = make_provider("openai");
+        provider.locked_model = Some("gpt-oss-120b".to_string());
+
+        assert!(provider.ensure_model_allowed("gpt-oss-120b").is_ok());
+        assert!(provider.ensure_model_allowed("gpt-4o").is_err());
     }
 
     #[test]
@@ -1500,6 +1537,7 @@ mod tests {
             dynamic_models: Some(true),
             skip_canonical_filtering: false,
             preserve_thinking_context: false,
+            locked_model: None,
             n_ctx_cache: Arc::new(Mutex::new(HashMap::new())),
         }
     }

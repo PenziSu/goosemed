@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Parameter, RecipeExtension } from '../../../recipe';
+import type { Parameter } from '../../../recipe';
 import { ChevronDown } from 'lucide-react';
 import { defineMessages, useIntl } from '../../../i18n';
 
@@ -55,7 +55,7 @@ const i18n = defineMessages({
   },
   advancedOptionsHint: {
     id: 'recipeFormFields.advancedOptionsHint',
-    defaultMessage: 'Activities, parameters, model, extensions, response schema, subrecipes',
+    defaultMessage: 'Activities, parameters, response schema, subrecipes',
   },
   parametersLabel: {
     id: 'recipeFormFields.parametersLabel',
@@ -96,8 +96,6 @@ import SubRecipeEditor from './SubRecipeEditor';
 import { Button } from '../../ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../ui/collapsible';
 import { RecipeFormApi, RecipeFormData, SubRecipeFormData } from './recipeFormSchema';
-import { RecipeModelSelector } from './RecipeModelSelector';
-import { RecipeExtensionSelector } from './RecipeExtensionSelector';
 
 // Type for field API to avoid linting issues - use any to bypass complex type constraints
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -241,12 +239,7 @@ export function RecipeFormFields({
     const hasActivities = Boolean(values.activities && values.activities.length > 0);
     const hasParameters = Boolean(values.parameters && values.parameters.length > 0);
     const hasJsonSchema = Boolean(values.jsonSchema && values.jsonSchema.trim());
-    const hasModel = Boolean(values.model && values.model.trim());
-    const hasProvider = Boolean(values.provider && values.provider.trim());
-    const hasExtensions = Boolean(values.extensions && values.extensions.length > 0);
-    return (
-      hasActivities || hasParameters || hasJsonSchema || hasModel || hasProvider || hasExtensions
-    );
+    return hasActivities || hasParameters || hasJsonSchema;
   }, []);
 
   const [advancedOpen, setAdvancedOpen] = useState(() => checkHasAdvancedData(form.state.values));
@@ -559,34 +552,6 @@ export function RecipeFormFields({
                 </div>
               );
             }}
-          </form.Field>
-
-          {/* Model and Provider Fields */}
-          <form.Field name="provider">
-            {(providerField: FormFieldApi<string | undefined>) => (
-              <form.Field name="model">
-                {(modelField: FormFieldApi<string | undefined>) => (
-                  <RecipeModelSelector
-                    selectedProvider={providerField.state.value}
-                    selectedModel={modelField.state.value}
-                    onProviderChange={(provider) => providerField.handleChange(provider)}
-                    onModelChange={(model) => modelField.handleChange(model)}
-                  />
-                )}
-              </form.Field>
-            )}
-          </form.Field>
-
-          {/* Extensions Field */}
-          <form.Field name="extensions">
-            {(field: FormFieldApi<RecipeExtension[] | undefined>) => (
-              <RecipeExtensionSelector
-                selectedExtensions={field.state.value || []}
-                onExtensionsChange={(extensions) =>
-                  field.handleChange(extensions.length > 0 ? extensions : undefined)
-                }
-              />
-            )}
           </form.Field>
 
           {/* JSON Schema Field */}

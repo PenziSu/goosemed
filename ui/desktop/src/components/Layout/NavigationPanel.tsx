@@ -3,7 +3,6 @@ import { useLocation } from 'react-router';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigationContext } from './NavigationContext';
-import { useConfig } from '../ConfigContext';
 import { useNavigationSessions } from '../../hooks/useNavigationSessions';
 import {
   NAV_ITEMS,
@@ -223,16 +222,9 @@ export const Navigation: React.FC<{ className?: string }> = ({ className }) => {
   const intl = useIntl();
   const { isNavExpanded } = useNavigationContext();
   const location = useLocation();
-  const { extensionsList } = useConfig();
-
-  const appsExtensionEnabled = !!extensionsList?.find((ext) => ext.name === 'apps')?.enabled;
-
   const visibleItems = useMemo<NavItem[]>(() => {
-    return NAV_ITEMS.filter((item) => {
-      if (item.path === '/apps') return appsExtensionEnabled;
-      return true;
-    });
-  }, [appsExtensionEnabled]);
+    return NAV_ITEMS;
+  }, []);
 
   const isActive = useCallback((path: string) => location.pathname === path, [location.pathname]);
 

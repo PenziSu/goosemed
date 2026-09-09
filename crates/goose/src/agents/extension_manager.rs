@@ -760,6 +760,28 @@ pub(crate) fn substitute_env_vars(value: &str, env_map: &HashMap<String, String>
 const GOOSE_USER_AGENT: reqwest::header::HeaderValue =
     reqwest::header::HeaderValue::from_static(concat!("goose/", env!("CARGO_PKG_VERSION")));
 
+#[cfg(feature = "goosemed")]
+fn goosemed_http_client_builder(
+    builder: reqwest::ClientBuilder,
+    uri: &str,
+) -> Result<reqwest::ClientBuilder, String> {
+    let origin = url::Url::parse(uri)
+        .map_err(|error| format!("invalid MCP URI: {error}"))?
+        .origin();
+    Ok(builder
+        .no_proxy()
+        .redirect(reqwest::redirect::Policy::custom(move |attempt| {
+            if attempt.previous().len() >= 10 {
+                return attempt.error("too many redirects");
+            }
+            if attempt.url().origin() == origin {
+                attempt.follow()
+            } else {
+                attempt.error("redirect crosses the approved MCP origin")
+            }
+        })))
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn connect_with_auth(
     auth_manager: rmcp::transport::AuthorizationManager,
@@ -789,6 +811,11 @@ async fn connect_with_auth(
     #[cfg(target_os = "linux")]
     {
         auth_client_builder = auth_client_builder.tcp_user_timeout(Some(timeout));
+    }
+    #[cfg(feature = "goosemed")]
+    {
+        auth_client_builder = goosemed_http_client_builder(auth_client_builder, uri)
+            .map_err(ExtensionError::ConfigError)?;
     }
     let auth_http_client = auth_client_builder
         .build()
@@ -1163,6 +1190,11 @@ async fn create_streamable_http_client(
     {
         http_client_builder = http_client_builder.tcp_user_timeout(Some(timeout_duration));
     }
+    #[cfg(feature = "goosemed")]
+    {
+        http_client_builder = goosemed_http_client_builder(http_client_builder, uri)
+            .map_err(ExtensionError::ConfigError)?;
+    }
     let http_client = http_client_builder
         .build()
         .map_err(|_| ExtensionError::ConfigError("could not construct http client".to_string()))?;
@@ -1188,7 +1220,7 @@ async fn create_streamable_http_client(
 
     // If we have stored OAuth credentials, try refreshing and connecting directly.
     // This avoids the unnecessary 401 → browser re-auth cycle on every new session.
-    if credential_store.load().await.is_ok_and(|c| c.is_some()) {
+    if !cfg!(feature = "goosemed") && credential_store.load().await.is_ok_and(|c| c.is_some()) {
         match oauth_flow(
             &uri.to_string(),
             &name.to_string(),
@@ -1254,6 +1286,10 @@ async fn create_streamable_http_client(
         extension_manager.clone(),
     )
     .await;
+
+    if cfg!(feature = "goosemed") {
+        return Ok(Box::new(client_res?));
+    }
 
     if should_attempt_oauth_fallback(&client_res) {
         let challenge = auth_challenge_from_result(&client_res);
@@ -1442,6 +1478,14 @@ impl ExtensionManager {
         container: Option<&Container>,
         session_id: Option<&str>,
     ) -> ExtensionResult<()> {
+        #[cfg(feature = "goosemed")]
+        if !crate::goosemed::extension_is_allowed(&config) {
+            return Err(ExtensionError::ConfigError(format!(
+                "extension '{}' is not permitted by the GooseMed security policy",
+                config.name()
+            )));
+        }
+
         let sanitized_name = config.key();
 
         // Compare both the unresolved config (to detect structural changes like
@@ -1680,6 +1724,11 @@ impl ExtensionManager {
         client: McpClientBox,
         info: Option<ServerInfo>,
     ) {
+        #[cfg(feature = "goosemed")]
+        if !crate::goosemed::extension_is_allowed(&config) {
+            return;
+        }
+
         let normalized = name_to_key(&name);
         self.extensions.lock().await.insert(
             normalized,

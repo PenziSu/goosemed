@@ -299,155 +299,180 @@ async fn resolve_provider_and_model(
     saved_provider: Option<String>,
     saved_model_config: Option<goose_providers::model::ModelConfig>,
 ) -> ResolvedProviderConfig {
-    let recipe_settings = session_config
-        .recipe
-        .as_ref()
-        .and_then(|r| r.settings.as_ref());
-    let configured_provider = config.get_goose_provider().ok();
-
-    let provider_name = session_config
-        .provider
-        .clone()
-        .or_else(|| saved_provider.clone())
-        .or_else(|| recipe_settings.and_then(|s| s.goose_provider.clone()))
-        .or_else(|| configured_provider.clone())
-        .unwrap_or_else(|| {
-            output::render_error("No provider configured. Run 'goose configure' first.");
-            process::exit(1);
-        });
-
-    let saved_provider_matches = saved_provider.as_deref() == Some(provider_name.as_str());
-    let provider_overridden = session_config.provider.is_some();
-    let matching_recipe_model = recipe_settings.and_then(|settings| {
-        let recipe_provider_matches = settings
-            .goose_provider
-            .as_deref()
-            .is_none_or(|provider| provider == provider_name);
-
-        if provider_overridden && recipe_provider_matches {
-            settings.goose_model.clone()
-        } else {
-            None
+    #[cfg(feature = "goosemed")]
+    {
+        let _ = (config, saved_provider, saved_model_config);
+        let provider_name = goose::goosemed::FIXED_PROVIDER.to_string();
+        let model_name = goose::goosemed::FIXED_MODEL.to_string();
+        let mut model_config = model_config_from_user_config(&provider_name, &model_name)
+            .expect("the compiled GooseMed model policy must be valid");
+        if !session_config.interactive {
+            model_config = model_config.with_cache_ttl_clamped();
         }
-    });
-    let matching_environment_model =
-        if provider_overridden && configured_provider.as_deref() == Some(provider_name.as_str()) {
+        ResolvedProviderConfig {
+            provider_name,
+            model_name,
+            model_config,
+        }
+    }
+
+    #[cfg(not(feature = "goosemed"))]
+    {
+        let recipe_settings = session_config
+            .recipe
+            .as_ref()
+            .and_then(|r| r.settings.as_ref());
+        let configured_provider = config.get_goose_provider().ok();
+
+        let provider_name = session_config
+            .provider
+            .clone()
+            .or_else(|| saved_provider.clone())
+            .or_else(|| recipe_settings.and_then(|s| s.goose_provider.clone()))
+            .or_else(|| configured_provider.clone())
+            .unwrap_or_else(|| {
+                output::render_error("No provider configured. Run 'goose configure' first.");
+                process::exit(1);
+            });
+
+        let saved_provider_matches = saved_provider.as_deref() == Some(provider_name.as_str());
+        let provider_overridden = session_config.provider.is_some();
+        let matching_recipe_model = recipe_settings.and_then(|settings| {
+            let recipe_provider_matches = settings
+                .goose_provider
+                .as_deref()
+                .is_none_or(|provider| provider == provider_name);
+
+            if provider_overridden && recipe_provider_matches {
+                settings.goose_model.clone()
+            } else {
+                None
+            }
+        });
+        let matching_environment_model = if provider_overridden
+            && configured_provider.as_deref() == Some(provider_name.as_str())
+        {
             std::env::var("GOOSE_MODEL").ok()
         } else {
             None
         };
-    let matching_config_model =
-        if provider_overridden && configured_provider.as_deref() == Some(provider_name.as_str()) {
+        let matching_config_model = if provider_overridden
+            && configured_provider.as_deref() == Some(provider_name.as_str())
+        {
             config.get_goose_model().ok()
         } else {
             None
         };
-    let configured_provider_model = session_config.provider.as_ref().and_then(|_| {
-        goose::config::get_provider_entry(config, &provider_name)
-            .map(|entry| entry.model)
+        let configured_provider_model = session_config.provider.as_ref().and_then(|_| {
+            goose::config::get_provider_entry(config, &provider_name)
+                .map(|entry| entry.model)
+                .filter(|model| !model.is_empty())
+        });
+        let target_provider_default = if provider_overridden
+            && session_config.model.is_none()
+            && matching_recipe_model.is_none()
+            && matching_environment_model.is_none()
+            && matching_config_model.is_none()
+            && configured_provider_model.is_none()
+        {
+            Some(
+                goose::providers::get_from_registry(&provider_name)
+                    .await
+                    .unwrap_or_else(|e| {
+                        output::render_error(&e.to_string());
+                        process::exit(1);
+                    })
+                    .metadata()
+                    .default_model
+                    .clone(),
+            )
             .filter(|model| !model.is_empty())
-    });
-    let target_provider_default = if provider_overridden
-        && session_config.model.is_none()
-        && matching_recipe_model.is_none()
-        && matching_environment_model.is_none()
-        && matching_config_model.is_none()
-        && configured_provider_model.is_none()
-    {
-        Some(
-            goose::providers::get_from_registry(&provider_name)
-                .await
-                .unwrap_or_else(|e| {
-                    output::render_error(&e.to_string());
-                    process::exit(1);
-                })
-                .metadata()
-                .default_model
-                .clone(),
-        )
-        .filter(|model| !model.is_empty())
-    } else {
-        None
-    };
+        } else {
+            None
+        };
 
-    let model_name = session_config
-        .model
-        .clone()
-        .or_else(|| {
-            if session_config.resume {
-                matching_environment_model.clone()
-            } else {
-                None
-            }
-        })
-        .or_else(|| {
-            if saved_provider_matches {
-                saved_model_config.as_ref().map(|mc| mc.model_name.clone())
-            } else {
-                None
-            }
-        })
-        .or(matching_recipe_model)
-        .or(matching_environment_model)
-        .or(matching_config_model)
-        .or(configured_provider_model)
-        .or(target_provider_default)
-        .or_else(|| {
-            if provider_overridden {
-                None
-            } else {
-                recipe_settings.and_then(|s| s.goose_model.clone())
-            }
-        })
-        .or_else(|| {
-            if provider_overridden {
-                None
-            } else {
-                config.get_goose_model().ok()
-            }
-        })
-        .unwrap_or_else(|| {
-            output::render_error("No model configured. Run 'goose configure' first.");
-            process::exit(1);
-        });
+        let model_name = session_config
+            .model
+            .clone()
+            .or_else(|| {
+                if session_config.resume {
+                    matching_environment_model.clone()
+                } else {
+                    None
+                }
+            })
+            .or_else(|| {
+                if saved_provider_matches {
+                    saved_model_config.as_ref().map(|mc| mc.model_name.clone())
+                } else {
+                    None
+                }
+            })
+            .or(matching_recipe_model)
+            .or(matching_environment_model)
+            .or(matching_config_model)
+            .or(configured_provider_model)
+            .or(target_provider_default)
+            .or_else(|| {
+                if provider_overridden {
+                    None
+                } else {
+                    recipe_settings.and_then(|s| s.goose_model.clone())
+                }
+            })
+            .or_else(|| {
+                if provider_overridden {
+                    None
+                } else {
+                    config.get_goose_model().ok()
+                }
+            })
+            .unwrap_or_else(|| {
+                output::render_error("No model configured. Run 'goose configure' first.");
+                process::exit(1);
+            });
 
-    let mut model_config = if session_config.resume
-        && saved_provider_matches
-        && saved_model_config
-            .as_ref()
-            .is_some_and(|mc| mc.model_name == model_name)
-    {
-        let mut config = saved_model_config.unwrap();
-        config.normalize_effort_suffix();
-        config = goose::model_config::with_rederived_cache_ttl(config).unwrap_or_else(|e| {
-            output::render_error(&format!("Invalid cache TTL configuration: {}", e));
-            process::exit(1);
-        });
-        if let Some(temp) = recipe_settings.and_then(|s| s.temperature) {
-            config = config.with_temperature(Some(temp));
+        let mut model_config = if session_config.resume
+            && saved_provider_matches
+            && saved_model_config
+                .as_ref()
+                .is_some_and(|mc| mc.model_name == model_name)
+        {
+            let mut config = saved_model_config.unwrap();
+            config.normalize_effort_suffix();
+            config = goose::model_config::with_rederived_cache_ttl(config).unwrap_or_else(|e| {
+                output::render_error(&format!("Invalid cache TTL configuration: {}", e));
+                process::exit(1);
+            });
+            if let Some(temp) = recipe_settings.and_then(|s| s.temperature) {
+                config = config.with_temperature(Some(temp));
+            }
+            config
+        } else {
+            let mut config =
+                goose::model_config::model_config_from_user_config(&provider_name, &model_name)
+                    .unwrap_or_else(|e| {
+                        output::render_error(&format!(
+                            "Failed to create model configuration: {}",
+                            e
+                        ));
+                        process::exit(1);
+                    });
+            if let Some(temp) = recipe_settings.and_then(|s| s.temperature) {
+                config = config.with_temperature(Some(temp));
+            }
+            config
+        };
+
+        if !session_config.interactive {
+            model_config = model_config.with_cache_ttl_clamped();
         }
-        config
-    } else {
-        let mut config =
-            goose::model_config::model_config_from_user_config(&provider_name, &model_name)
-                .unwrap_or_else(|e| {
-                    output::render_error(&format!("Failed to create model configuration: {}", e));
-                    process::exit(1);
-                });
-        if let Some(temp) = recipe_settings.and_then(|s| s.temperature) {
-            config = config.with_temperature(Some(temp));
+
+        ResolvedProviderConfig {
+            provider_name,
+            model_name,
+            model_config,
         }
-        config
-    };
-
-    if !session_config.interactive {
-        model_config = model_config.with_cache_ttl_clamped();
-    }
-
-    ResolvedProviderConfig {
-        provider_name,
-        model_name,
-        model_config,
     }
 }
 
@@ -595,15 +620,6 @@ async fn collect_extension_configs(
         .into_iter()
         .map(|config| (config.name(), config))
         .collect();
-    if !session_config.no_profile && !session_config.resume && recipe_extensions.is_none() {
-        let project_root = std::env::current_dir().ok();
-        all.extend(
-            goose::plugins::mcp_servers::enabled_plugin_mcp_servers(project_root.as_deref())
-                .into_iter()
-                .map(|config| (config.name(), config)),
-        );
-    }
-
     deduplicate_cli_builtins(&all, &mut cli_flag_extensions);
 
     let cli_start = all.len();
@@ -620,7 +636,8 @@ async fn collect_extension_configs(
     disambiguate_stdio_extension_names(&mut all, &renameable)
         .map_err(ExtensionError::ConfigError)?;
 
-    Ok(all.into_iter().map(|(_, config)| config).collect())
+    let _ = all;
+    Ok(goose::goosemed::fixed_extensions())
 }
 
 async fn configure_session_prompts(
@@ -895,6 +912,7 @@ fn is_provider_unavailable_error(e: &anyhow::Error) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(feature = "goosemed"))]
     use goose::config::{set_provider_entry, ProviderEntry};
     use goose::session::SessionManager;
     use tempfile::TempDir;
@@ -1071,6 +1089,7 @@ mod tests {
         .unwrap()
     }
 
+    #[cfg(not(feature = "goosemed"))]
     fn clear_provider_env() -> env_lock::EnvGuard<'static> {
         env_lock::lock_env([
             ("GOOSE_PROVIDER", None::<&str>),
@@ -1078,6 +1097,7 @@ mod tests {
         ])
     }
 
+    #[cfg(not(feature = "goosemed"))]
     fn saved_model_config(model_name: &str) -> goose_providers::model::ModelConfig {
         goose_providers::model::ModelConfig::new(model_name).with_merged_request_params(
             std::collections::HashMap::from([(
@@ -1149,6 +1169,35 @@ mod tests {
         assert!(!config.fork);
     }
 
+    #[cfg(feature = "goosemed")]
+    #[tokio::test]
+    async fn goosemed_ignores_all_session_model_overrides() {
+        let temp_dir = TempDir::new().unwrap();
+        let config = test_config(&temp_dir);
+        config.set_param("GOOSE_PROVIDER", "anthropic").unwrap();
+        config.set_param("GOOSE_MODEL", "claude").unwrap();
+
+        let resolved = resolve_provider_and_model(
+            &SessionBuilderConfig {
+                provider: Some("anthropic".to_string()),
+                model: Some("claude".to_string()),
+                ..SessionBuilderConfig::default()
+            },
+            &config,
+            Some("anthropic".to_string()),
+            Some(goose_providers::model::ModelConfig::new("claude")),
+        )
+        .await;
+
+        assert_eq!(resolved.provider_name, goose::goosemed::FIXED_PROVIDER);
+        assert_eq!(resolved.model_name, goose::goosemed::FIXED_MODEL);
+        assert_eq!(
+            resolved.model_config.model_name,
+            goose::goosemed::FIXED_MODEL
+        );
+    }
+
+    #[cfg(not(feature = "goosemed"))]
     #[tokio::test]
     async fn resume_provider_override_uses_target_provider_model() {
         let _guard = clear_provider_env();
@@ -1184,6 +1233,7 @@ mod tests {
         assert_eq!(resolved.model_config.model_name, "gpt-5.4");
     }
 
+    #[cfg(not(feature = "goosemed"))]
     #[tokio::test]
     async fn matching_provider_override_preserves_configured_model() {
         let _guard = clear_provider_env();
@@ -1208,6 +1258,7 @@ mod tests {
         assert_eq!(resolved.model_config.model_name, "my-custom-model");
     }
 
+    #[cfg(not(feature = "goosemed"))]
     #[tokio::test]
     async fn matching_environment_model_overrides_saved_model() {
         let _guard = env_lock::lock_env([
@@ -1244,6 +1295,7 @@ mod tests {
         assert_eq!(resolved.model_config.model_name, "environment-model");
     }
 
+    #[cfg(not(feature = "goosemed"))]
     #[tokio::test]
     async fn matching_provider_override_preserves_saved_model_over_configured_model() {
         let _guard = clear_provider_env();
@@ -1278,6 +1330,7 @@ mod tests {
         assert_eq!(resolved.model_config.model_name, "saved-model");
     }
 
+    #[cfg(not(feature = "goosemed"))]
     #[tokio::test]
     async fn matching_provider_override_preserves_recipe_model() {
         let _guard = clear_provider_env();
@@ -1314,6 +1367,7 @@ mod tests {
         assert_eq!(resolved.model_config.model_name, "recipe-model");
     }
 
+    #[cfg(not(feature = "goosemed"))]
     #[tokio::test]
     async fn conflicting_recipe_model_is_ignored_for_provider_override() {
         let _guard = clear_provider_env();
@@ -1357,6 +1411,7 @@ mod tests {
         assert_eq!(resolved.model_name, "openai-model");
     }
 
+    #[cfg(not(feature = "goosemed"))]
     #[tokio::test]
     async fn resume_provider_override_uses_target_provider_default_instead_of_active_model() {
         let _guard = clear_provider_env();
@@ -1392,6 +1447,7 @@ mod tests {
         assert_ne!(resolved.model_name, "claude-sonnet-4-6");
     }
 
+    #[cfg(not(feature = "goosemed"))]
     #[tokio::test]
     async fn resume_provider_override_rebuilds_same_named_model_config() {
         let _guard = clear_provider_env();
@@ -1419,6 +1475,7 @@ mod tests {
             .is_some_and(|params| params.contains_key("anthropic_beta")));
     }
 
+    #[cfg(not(feature = "goosemed"))]
     #[tokio::test]
     async fn resume_same_provider_reuses_saved_model_config() {
         let _guard = clear_provider_env();

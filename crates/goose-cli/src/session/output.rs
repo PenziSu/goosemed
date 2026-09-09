@@ -34,10 +34,6 @@ fn accent<T: Display>(value: T) -> StyledObject<T> {
     style(value).cyan()
 }
 
-fn success<T: Display>(value: T) -> StyledObject<T> {
-    style(value).green()
-}
-
 fn warning<T: Display>(value: T) -> StyledObject<T> {
     style(value).yellow()
 }
@@ -814,39 +810,9 @@ fn render_arguments(info: &PromptInfo) {
     }
 }
 
-pub fn render_extension_success(name: &str) {
-    println!();
-    println!("  {} extension `{}`", success("added"), accent(name),);
-    println!();
-}
-
 pub fn render_extension_error(name: &str, error: &str) {
     println!();
     println!("  {} to add extension {}", danger("failed"), danger(name));
-    println!();
-    println!("{}", style(error).dim());
-    println!();
-}
-
-pub fn render_builtin_success(names: &str) {
-    println!();
-    println!(
-        "  {} builtin{}: {}",
-        success("added"),
-        if names.contains(',') { "s" } else { "" },
-        accent(names)
-    );
-    println!();
-}
-
-pub fn render_builtin_error(names: &str, error: &str) {
-    println!();
-    println!(
-        "  {} to add builtin{}: {}",
-        danger("failed"),
-        if names.contains(',') { "s" } else { "" },
-        danger(names)
-    );
     println!();
     println!("{}", style(error).dim());
     println!();

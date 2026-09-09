@@ -11,8 +11,6 @@ import debounce from 'lodash/debounce';
 import { LocalMessageStorage } from '../utils/localMessageStorage';
 import { DirSwitcher } from './bottom_menu/DirSwitcher';
 import { GitBranchIndicator } from './GitBranchIndicator';
-import ModelsBottomBar from './settings/models/bottom_bar/ModelsBottomBar';
-import { BottomMenuExtensionSelection } from './bottom_menu/BottomMenuExtensionSelection';
 import { cn } from '../utils';
 import { AlertType, useAlerts } from './alerts';
 import { useModelAndProvider } from './ModelAndProviderContext';
@@ -213,7 +211,7 @@ export default function ChatInput({
   draftRef,
   droppedFiles = [],
   onFilesProcessed,
-  setView,
+  setView: _setView,
   totalTokens,
   contextLimit,
   accumulatedInputTokens,
@@ -230,11 +228,11 @@ export default function ChatInput({
   inputRef,
   sessionModel,
   sessionProvider,
-  sessionLoaded,
+  sessionLoaded: _sessionLoaded,
   workingDir,
-  latestInference,
-  nextChatExtensionDraft,
-  onNextChatExtensionDraftChange,
+  latestInference: _latestInference,
+  nextChatExtensionDraft: _nextChatExtensionDraft,
+  onNextChatExtensionDraftChange: _onNextChatExtensionDraftChange,
 }: ChatInputProps) {
   const [_value, setValue] = useState(initialValue);
   const [displayValue, setDisplayValue] = useState(initialValue); // For immediate visual feedback
@@ -303,9 +301,6 @@ export default function ChatInput({
   }, []);
 
   const { alerts, addAlert, clearAlerts } = useAlerts();
-  const dropdownRef: React.RefObject<HTMLDivElement> = useRef<HTMLDivElement>(
-    null
-  ) as React.RefObject<HTMLDivElement>;
   const intl = useIntl();
   const {
     getCurrentModelAndProvider,
@@ -313,28 +308,8 @@ export default function ChatInput({
     currentProvider: configProvider,
   } = useModelAndProvider();
 
-  // Local override for when the user changes the model in the modal,
-  // before the session object is re-fetched from the backend.
-  const [modelOverride, setModelOverride] = useState<{ model: string; provider: string } | null>(
-    null
-  );
-  const effectiveModel = modelOverride?.model ?? sessionModel ?? configModel;
-  const effectiveProvider = modelOverride?.provider ?? sessionProvider ?? configProvider;
-
-  // Clear override when the underlying data catches up (session props for
-  // active chats, config defaults for Hub / no-session contexts).
-  useEffect(() => {
-    if (!modelOverride) return;
-    const sessionCaughtUp =
-      sessionModel === modelOverride.model && sessionProvider === modelOverride.provider;
-    const configCaughtUp =
-      !sessionId &&
-      configModel === modelOverride.model &&
-      configProvider === modelOverride.provider;
-    if (sessionCaughtUp || configCaughtUp) {
-      setModelOverride(null);
-    }
-  }, [sessionModel, sessionProvider, configModel, configProvider, sessionId, modelOverride]);
+  const effectiveModel = sessionModel ?? configModel;
+  const effectiveProvider = sessionProvider ?? configProvider;
   const [tokenLimit, setTokenLimit] = useState<number>(TOKEN_LIMIT_DEFAULT);
   const [isTokenLimitLoaded, setIsTokenLimitLoaded] = useState(false);
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
@@ -1692,21 +1667,7 @@ export default function ChatInput({
           (e.g. on a small window), the secondary controls drop out so the
           model selector + send button always stay visible. */}
       <div ref={bottomBarRef} className="flex flex-row items-center gap-2 px-3 py-2 relative">
-        {/* Left: model selector */}
-        <Tooltip>
-          <div>
-            <ModelsBottomBar
-              sessionId={sessionId}
-              dropdownRef={dropdownRef}
-              setView={setView}
-              sessionModel={effectiveModel}
-              sessionProvider={effectiveProvider}
-              latestInference={latestInference}
-              onModelChanged={setModelOverride}
-              sessionLoaded={sessionLoaded}
-            />
-          </div>
-        </Tooltip>
+        <div className="text-xs text-text-secondary px-2">{effectiveModel ?? 'gpt-oss-120b'}</div>
 
         {/* Left: working directory (leaf folder name only) */}
         {!isBottomBarNarrow && (
@@ -1746,13 +1707,6 @@ export default function ChatInput({
               totalTokens={totalTokens || 0}
               tokenLimit={tokenLimit}
               alerts={alerts}
-            />
-
-            {/* Right: extension selector */}
-            <BottomMenuExtensionSelection
-              sessionId={sessionId}
-              nextChatExtensionDraft={nextChatExtensionDraft}
-              onNextChatExtensionDraftChange={onNextChatExtensionDraftChange}
             />
 
             {/* Right: diagnostics */}

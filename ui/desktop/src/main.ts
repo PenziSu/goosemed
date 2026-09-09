@@ -577,9 +577,7 @@ function deliverExtensionOrSessionDeepLink(
     return;
   }
 
-  if (parsedUrl.hostname === 'extension') {
-    targetWindow.webContents.send('add-extension', url);
-  } else if (parsedUrl.hostname === 'sessions') {
+  if (parsedUrl.hostname === 'sessions') {
     sendOpenSharedSession(targetWindow, url);
   }
 }
@@ -656,9 +654,7 @@ async function processProtocolUrl(url: string, parsedUrl: URL, window: BrowserWi
   const recentDirs = loadRecentDirs();
   const openDir = recentDirs.length > 0 ? recentDirs[0] : null;
 
-  if (parsedUrl.hostname === 'extension') {
-    window.webContents.send('add-extension', url);
-  } else if (parsedUrl.hostname === 'sessions') {
+  if (parsedUrl.hostname === 'sessions') {
     sendOpenSharedSession(window, url);
   } else if (parsedUrl.hostname === 'bot' || parsedUrl.hostname === 'recipe') {
     const deeplinkData = parseRecipeDeeplink(url);
@@ -734,7 +730,7 @@ app.on('open-url', async (_event, url) => {
       const targetWindow = regularWindows[0];
       if (targetWindow.isMinimized()) targetWindow.restore();
       targetWindow.focus();
-      if (parsedUrl.hostname === 'extension' || parsedUrl.hostname === 'sessions') {
+      if (parsedUrl.hostname === 'sessions') {
         deliverExtensionOrSessionDeepLink(url, parsedUrl, targetWindow);
       }
     } else {
@@ -1423,7 +1419,7 @@ const createChat = async (
     recipes: '/recipes',
     skills: '/skills',
     permission: '/permission',
-    ConfigureProviders: '/configure-providers',
+    ConfigureProviders: '/settings',
   };
 
   if (viewType) {
@@ -1904,9 +1900,7 @@ ipcMain.on('react-ready', (event) => {
     log.info('Processing pending deep link for window:', windowId);
     try {
       const parsedUrl = new URL(deepLinkUrl);
-      if (parsedUrl.hostname === 'extension') {
-        window.webContents.send('add-extension', deepLinkUrl);
-      } else if (parsedUrl.hostname === 'sessions') {
+      if (parsedUrl.hostname === 'sessions') {
         sendOpenSharedSession(window, deepLinkUrl);
       }
     } catch (error) {

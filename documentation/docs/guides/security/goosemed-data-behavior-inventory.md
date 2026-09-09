@@ -6,8 +6,8 @@
 
 | ID | 行為 | 可能接觸的資料 | 保存位置或傳送目的地 | 狀態 |
 | --- | --- | --- | --- | --- |
-| D01 | 將對話送往語言模型 | 提示詞、工具結果、資料摘要 | 模型 Provider Endpoint | 限縮中，待鎖定唯一院內 Endpoint |
-| D02 | 透過 MCP 查詢並接收資料 | 查詢參數、IRB 範圍、病患資料 | MCP Server 與目前專案目錄 | 限縮中，待鎖定唯一核准 MCP |
+| D01 | 將對話送往語言模型 | 提示詞、工具結果、資料摘要 | 編譯時指定的院內模型 Endpoint | 已鎖定 `openai` 相容介面與 `gpt-oss-120b`，執行期設定無法覆寫 |
+| D02 | 透過 MCP 查詢並接收資料 | 查詢參數、IRB 範圍、病患資料 | 編譯時指定的 MCP Server 與目前專案目錄 | 已鎖定唯一 Streamable HTTP MCP，忽略工作階段與設定檔傳入的其他 MCP |
 | D03 | 執行 Shell 與 Python | 命令、檔案內容、stdout、stderr | 子程序、檔案系統、網路 | macOS 已限制專案目錄並拒絕網路，Windows 待完成 |
 | D04 | 使用結構化檔案工具 | 專案內 Excel、圖片與衍生資料 | 目前專案目錄 | 已阻擋絕對路徑、上一層與符號連結跳脫 |
 | D05 | 保存對話工作階段 | 完整對話、工作目錄、模型與工具狀態 | 本機 SQLite | 保留，需納入磁碟加密、權限與清除政策 |
@@ -19,8 +19,8 @@
 | D11 | 檢查與下載軟體更新 | 版本、平台與網路中繼資料 | 發行站與 GitHub | 已移除桌面更新器及 Rust 預設 update 功能 |
 | D12 | 傳送 Telemetry、OTEL 或追蹤資料 | 使用事件、錯誤、模型與工具欄位 | 原本的 PostHog、OTLP、Langfuse | 預設建置已排除 Telemetry、OTEL 與相關 Code Mode，Langfuse 實作已移除 |
 | D13 | 分享或匯入 Nostr 工作階段 | 加密後的完整對話工作階段 | Nostr relay | Rust 預設建置已排除，桌面入口待移除 |
-| D14 | 設定其他 Provider 與 OAuth | Endpoint、模型名稱、憑證與登入狀態 | 任意 Provider 與外部瀏覽器 | 待移除並鎖定院內模型 |
-| D15 | 安裝或執行 extension、plugin、hook 與任意 MCP | 提示詞、工具輸入輸出與程序環境 | 子程序、stdio、HTTP 或外部服務 | 待移除，只保留核准 MCP 與內建受限工具 |
+| D14 | 設定其他 Provider 與 OAuth | Endpoint、模型名稱、憑證與登入狀態 | 任意 Provider 與外部瀏覽器 | 已阻擋 UI、CLI、ACP 與設定檔覆寫，只建立固定 Provider |
+| D15 | 安裝或執行 extension、plugin、hook 與任意 MCP | 提示詞、工具輸入輸出與程序環境 | 子程序、stdio、HTTP 或外部服務 | 已阻擋新增、刪除與啟停介面，只載入受限 developer 工具與固定 MCP；plugin 與 hook 不載入 |
 | D16 | 使用 dictation、gateway 或模型下載 | 語音、訊息或模型請求 | 語音 Provider、Telegram、Hugging Face 等服務 | 待移除或在醫療版停用 |
 | D17 | 開啟外部連結 | 連結內可能夾帶資料或追蹤參數 | 系統瀏覽器與 URL handler | 待限制為核准院內網址 |
 | D18 | 匯出、備份或複製資料 | 對話與研究資料集 | 使用者選定檔案、剪貼簿或備份系統 | 保留人工操作，但需限制匯出路徑與部署政策 |
@@ -46,3 +46,7 @@
 | D18 | `crates/goose/src/session/export_markdown.rs`、桌面匯出與剪貼簿呼叫位置 |
 
 每次完成一項控制，必須同步更新狀態並留下可重複的負向測試。只有「請求確實失敗」還不夠，外連測試必須同時證明接收端沒有收到封包。
+
+## GooseMed 編譯設定
+
+`GOOSEMED_LLM_ENDPOINT` 與 `GOOSEMED_MCP_ENDPOINT` 只在編譯時讀取。若未指定，開發建置分別使用 `http://127.0.0.1:8080/v1` 與 `http://127.0.0.1:3001/mcp`。正式建置必須由受控建置流程注入院內位址，執行期環境變數、設定檔與啟動參數都不能更換目的地。

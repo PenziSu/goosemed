@@ -1,11 +1,17 @@
 use super::base::{Config, ConfigError};
+#[cfg(not(feature = "goosemed"))]
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+#[cfg(not(feature = "goosemed"))]
 use serde_yaml::Mapping;
+#[cfg(not(feature = "goosemed"))]
 use std::env;
+#[cfg(not(feature = "goosemed"))]
 use tracing::warn;
 
+#[cfg(not(feature = "goosemed"))]
 const PROVIDERS_CONFIG_KEY: &str = "providers";
+#[cfg(not(feature = "goosemed"))]
 const ACTIVE_PROVIDER_KEY: &str = "active_provider";
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -18,6 +24,7 @@ pub struct ProviderEntry {
     pub configured: bool,
 }
 
+#[cfg(not(feature = "goosemed"))]
 fn parse_providers_map(raw: Mapping) -> IndexMap<String, ProviderEntry> {
     let mut map = IndexMap::with_capacity(raw.len());
     for (k, v) in raw {
@@ -37,6 +44,7 @@ fn parse_providers_map(raw: Mapping) -> IndexMap<String, ProviderEntry> {
     map
 }
 
+#[cfg(not(feature = "goosemed"))]
 fn get_providers_map(config: &Config) -> IndexMap<String, ProviderEntry> {
     let raw: Mapping = config
         .get_param(PROVIDERS_CONFIG_KEY)
@@ -45,6 +53,17 @@ fn get_providers_map(config: &Config) -> IndexMap<String, ProviderEntry> {
 }
 
 pub fn get_provider_entry(config: &Config, name: &str) -> Option<ProviderEntry> {
+    #[cfg(feature = "goosemed")]
+    {
+        let _ = config;
+        (name == crate::goosemed::FIXED_PROVIDER).then(|| ProviderEntry {
+            enabled: true,
+            model: crate::goosemed::FIXED_MODEL.to_string(),
+            configured: true,
+        })
+    }
+
+    #[cfg(not(feature = "goosemed"))]
     get_providers_map(config).get(name).cloned()
 }
 
@@ -53,60 +72,164 @@ pub fn set_provider_entry(
     name: &str,
     entry: &ProviderEntry,
 ) -> Result<(), ConfigError> {
-    let name = name.to_string();
-    let entry = entry.clone();
-    config.update_param::<Mapping, _, _>(PROVIDERS_CONFIG_KEY, |raw| {
-        let mut map = parse_providers_map(raw);
-        map.insert(name, entry);
-        map
-    })
+    #[cfg(feature = "goosemed")]
+    {
+        let _ = (config, entry);
+        if name == crate::goosemed::FIXED_PROVIDER && entry.model == crate::goosemed::FIXED_MODEL {
+            return Ok(());
+        }
+        Err(ConfigError::PolicyViolation(format!(
+            "provider and model are fixed to '{}:{}'",
+            crate::goosemed::FIXED_PROVIDER,
+            crate::goosemed::FIXED_MODEL
+        )))
+    }
+
+    #[cfg(not(feature = "goosemed"))]
+    {
+        let name = name.to_string();
+        let entry = entry.clone();
+        config.update_param::<Mapping, _, _>(PROVIDERS_CONFIG_KEY, |raw| {
+            let mut map = parse_providers_map(raw);
+            map.insert(name, entry);
+            map
+        })
+    }
 }
 
 pub fn get_active_provider(config: &Config) -> Option<String> {
-    if let Ok(val) = env::var("GOOSE_PROVIDER") {
-        return Some(val);
+    #[cfg(feature = "goosemed")]
+    {
+        let _ = config;
+        Some(crate::goosemed::FIXED_PROVIDER.to_string())
     }
-    if let Ok(val) = config.get_param::<String>(ACTIVE_PROVIDER_KEY) {
-        return Some(val);
+
+    #[cfg(not(feature = "goosemed"))]
+    {
+        if let Ok(val) = env::var("GOOSE_PROVIDER") {
+            return Some(val);
+        }
+        if let Ok(val) = config.get_param::<String>(ACTIVE_PROVIDER_KEY) {
+            return Some(val);
+        }
+        config.get_param::<String>("GOOSE_PROVIDER").ok()
     }
-    config.get_param::<String>("GOOSE_PROVIDER").ok()
 }
 
 pub fn get_active_model(config: &Config) -> Option<String> {
-    if let Ok(val) = env::var("GOOSE_MODEL") {
-        return Some(val);
+    #[cfg(feature = "goosemed")]
+    {
+        let _ = config;
+        Some(crate::goosemed::FIXED_MODEL.to_string())
     }
-    if let Some(provider_name) = get_active_provider(config) {
-        if let Some(entry) = get_provider_entry(config, &provider_name) {
-            if !entry.model.is_empty() {
-                return Some(entry.model);
+
+    #[cfg(not(feature = "goosemed"))]
+    {
+        if let Ok(val) = env::var("GOOSE_MODEL") {
+            return Some(val);
+        }
+        if let Some(provider_name) = get_active_provider(config) {
+            if let Some(entry) = get_provider_entry(config, &provider_name) {
+                if !entry.model.is_empty() {
+                    return Some(entry.model);
+                }
             }
         }
+        config.get_param::<String>("GOOSE_MODEL").ok()
     }
-    config.get_param::<String>("GOOSE_MODEL").ok()
 }
 
 pub fn set_active_provider(config: &Config, name: &str, model: &str) -> Result<(), ConfigError> {
-    config.set_param(ACTIVE_PROVIDER_KEY, name)?;
-    let entry = ProviderEntry {
-        enabled: true,
-        model: model.to_string(),
-        configured: true,
-    };
-    set_provider_entry(config, name, &entry)
+    #[cfg(feature = "goosemed")]
+    {
+        let _ = config;
+        if name == crate::goosemed::FIXED_PROVIDER && model == crate::goosemed::FIXED_MODEL {
+            return Ok(());
+        }
+        Err(ConfigError::PolicyViolation(format!(
+            "provider and model are fixed to '{}:{}'",
+            crate::goosemed::FIXED_PROVIDER,
+            crate::goosemed::FIXED_MODEL
+        )))
+    }
+
+    #[cfg(not(feature = "goosemed"))]
+    {
+        config.set_param(ACTIVE_PROVIDER_KEY, name)?;
+        let entry = ProviderEntry {
+            enabled: true,
+            model: model.to_string(),
+            configured: true,
+        };
+        set_provider_entry(config, name, &entry)
+    }
 }
 
 pub fn clear_active_provider(config: &Config) -> Result<(), ConfigError> {
-    for key in [ACTIVE_PROVIDER_KEY, "GOOSE_PROVIDER", "GOOSE_MODEL"] {
-        match config.delete(key) {
-            Ok(()) | Err(ConfigError::NotFound(_)) => {}
-            Err(e) => return Err(e),
-        }
+    #[cfg(feature = "goosemed")]
+    {
+        let _ = config;
+        Err(ConfigError::PolicyViolation(
+            "the fixed GooseMed provider cannot be cleared".to_string(),
+        ))
     }
-    Ok(())
+
+    #[cfg(not(feature = "goosemed"))]
+    {
+        for key in [ACTIVE_PROVIDER_KEY, "GOOSE_PROVIDER", "GOOSE_MODEL"] {
+            match config.delete(key) {
+                Ok(()) | Err(ConfigError::NotFound(_)) => {}
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(())
+    }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "goosemed"))]
+mod goosemed_tests {
+    use super::*;
+    use tempfile::NamedTempFile;
+
+    fn new_test_config() -> Config {
+        let config_file = NamedTempFile::new().unwrap();
+        let secrets_file = NamedTempFile::new().unwrap();
+        Config::new_with_file_secrets(config_file.path(), secrets_file.path()).unwrap()
+    }
+
+    #[test]
+    fn conflicting_saved_configuration_is_ignored() {
+        let config = new_test_config();
+        config.set_param("GOOSE_PROVIDER", "anthropic").unwrap();
+        config.set_param("GOOSE_MODEL", "claude").unwrap();
+
+        assert_eq!(
+            get_active_provider(&config).as_deref(),
+            Some(crate::goosemed::FIXED_PROVIDER)
+        );
+        assert_eq!(
+            get_active_model(&config).as_deref(),
+            Some(crate::goosemed::FIXED_MODEL)
+        );
+        assert!(get_provider_entry(&config, "anthropic").is_none());
+    }
+
+    #[test]
+    fn runtime_provider_mutation_is_rejected() {
+        let config = new_test_config();
+        let entry = ProviderEntry {
+            enabled: true,
+            model: "claude".to_string(),
+            configured: true,
+        };
+
+        assert!(set_provider_entry(&config, "anthropic", &entry).is_err());
+        assert!(set_active_provider(&config, "anthropic", "claude").is_err());
+        assert!(clear_active_provider(&config).is_err());
+    }
+}
+
+#[cfg(all(test, not(feature = "goosemed")))]
 mod tests {
     use super::*;
     use tempfile::NamedTempFile;

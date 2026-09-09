@@ -1,10 +1,10 @@
-#[cfg(test)]
+#[cfg(all(test, not(feature = "goosemed")))]
 mod message_generator;
-#[cfg(test)]
+#[cfg(all(test, not(feature = "goosemed")))]
 mod mock_client;
-#[cfg(test)]
+#[cfg(all(test, not(feature = "goosemed")))]
 mod provider_configs;
-#[cfg(test)]
+#[cfg(all(test, not(feature = "goosemed")))]
 mod scenario_runner;
-#[cfg(test)]
+#[cfg(all(test, not(feature = "goosemed")))]
 mod scenarios;

@@ -1,23 +1,49 @@
 use anyhow::Result;
 use futures::future::BoxFuture;
 use goose_providers::base::ProviderDescriptor;
+#[cfg(not(feature = "goosemed"))]
 use std::collections::HashMap;
 
 use crate::config::declarative_providers::DeclarativeProviderConfig;
+#[cfg(not(feature = "goosemed"))]
 use crate::config::Config;
 use crate::providers::base::{ProviderDef, DEFAULT_PROVIDER_TIMEOUT_SECS};
+#[cfg(not(feature = "goosemed"))]
 use crate::providers::command_auth::CommandAuthProvider;
+#[cfg(not(feature = "goosemed"))]
 use crate::providers::custom_provider_config::ConfigKeyResolver;
 use goose_providers::api_client::{ApiClient, AuthMethod};
+#[cfg(feature = "goosemed")]
+use goose_providers::base::{ModelInfo, ProviderMetadata};
+#[cfg(not(feature = "goosemed"))]
+use goose_providers::openai::parse_custom_headers;
 use goose_providers::openai::{
-    parse_custom_headers, parse_openai_base_url, OpenAiProvider, OpenAiProviderBuilder,
-    OPEN_AI_DEFAULT_BASE_PATH, OPEN_AI_VERSIONLESS_BASE_PATH,
+    parse_openai_base_url, OpenAiProvider, OpenAiProviderBuilder, OPEN_AI_DEFAULT_BASE_PATH,
+    OPEN_AI_VERSIONLESS_BASE_PATH,
 };
 
 pub struct OpenAiProviderDef;
 
 impl ProviderDescriptor for OpenAiProviderDef {
     fn metadata() -> goose_providers::base::ProviderMetadata {
+        #[cfg(feature = "goosemed")]
+        return ProviderMetadata::with_models(
+            crate::goosemed::FIXED_PROVIDER,
+            "GooseMed local model",
+            "Hospital-controlled OpenAI-compatible inference endpoint",
+            crate::goosemed::FIXED_MODEL,
+            vec![ModelInfo::new(crate::goosemed::FIXED_MODEL)],
+            "",
+            vec![goose_providers::base::ConfigKey::new(
+                "OPENAI_API_KEY",
+                false,
+                true,
+                None,
+                true,
+            )],
+        );
+
+        #[cfg(not(feature = "goosemed"))]
         OpenAiProvider::metadata().with_setup(
             crate::providers::catalog::ProviderSetupMetadata::new(
                 crate::providers::catalog::ProviderSetupCategory::Model,
@@ -49,108 +75,148 @@ impl ProviderDef for OpenAiProviderDef {
 pub async fn from_env(
     tls_config: Option<goose_providers::api_client::TlsConfig>,
 ) -> Result<OpenAiProvider> {
-    let config = crate::config::Config::global();
+    #[cfg(feature = "goosemed")]
+    return goosemed_from_env(tls_config).await;
 
-    // Resolve host and base_path.
-    //
-    // Priority (highest first):
-    //   1. OPENAI_HOST env var — session override (deprecated but still
-    //      honoured so that `OPENAI_HOST=… goose` keeps working)
-    //   2. OPENAI_BASE_URL (env or config) — ecosystem-standard
-    //   3. OPENAI_HOST from config file — persisted by `goose configure`
-    //   4. Default "https://api.openai.com"
-    //
-    // OPENAI_BASE_URL is parsed into host + query params + a flag
-    // indicating whether the URL included a /v1 path segment.  When /v1
-    // is present the default base_path is "v1/chat/completions";
-    // otherwise "chat/completions" to match the OpenAI SDK convention.
-    //
-    // OPENAI_BASE_PATH always wins when set explicitly.
-    let parsed = resolve_base_url(config)?;
+    #[cfg(not(feature = "goosemed"))]
+    {
+        let config = crate::config::Config::global();
 
-    // When the host was derived from OPENAI_BASE_URL, read
-    // OPENAI_BASE_PATH from env only so that the desktop UI's persisted
-    // default ("v1/chat/completions") doesn't shadow the versionless
-    // path.  When the host came from OPENAI_HOST (env or config), read
-    // from config too — Docker Model Runner and similar setups persist a
-    // custom base_path that must be honoured.
-    let default_bp = || {
-        if parsed.has_v1 {
-            OPEN_AI_DEFAULT_BASE_PATH.to_string()
+        // Resolve host and base_path.
+        //
+        // Priority (highest first):
+        //   1. OPENAI_HOST env var — session override (deprecated but still
+        //      honoured so that `OPENAI_HOST=… goose` keeps working)
+        //   2. OPENAI_BASE_URL (env or config) — ecosystem-standard
+        //   3. OPENAI_HOST from config file — persisted by `goose configure`
+        //   4. Default "https://api.openai.com"
+        //
+        // OPENAI_BASE_URL is parsed into host + query params + a flag
+        // indicating whether the URL included a /v1 path segment.  When /v1
+        // is present the default base_path is "v1/chat/completions";
+        // otherwise "chat/completions" to match the OpenAI SDK convention.
+        //
+        // OPENAI_BASE_PATH always wins when set explicitly.
+        let parsed = resolve_base_url(config)?;
+
+        // When the host was derived from OPENAI_BASE_URL, read
+        // OPENAI_BASE_PATH from env only so that the desktop UI's persisted
+        // default ("v1/chat/completions") doesn't shadow the versionless
+        // path.  When the host came from OPENAI_HOST (env or config), read
+        // from config too — Docker Model Runner and similar setups persist a
+        // custom base_path that must be honoured.
+        let default_bp = || {
+            if parsed.has_v1 {
+                OPEN_AI_DEFAULT_BASE_PATH.to_string()
+            } else {
+                OPEN_AI_VERSIONLESS_BASE_PATH.to_string()
+            }
+        };
+        let base_path: String = if parsed.from_base_url {
+            std::env::var("OPENAI_BASE_PATH").unwrap_or_else(|_| default_bp())
         } else {
-            OPEN_AI_VERSIONLESS_BASE_PATH.to_string()
+            config
+                .get_param("OPENAI_BASE_PATH")
+                .unwrap_or_else(|_| default_bp())
+        };
+
+        let is_openai = is_direct_openai_host(&parsed.host);
+        let secrets = config
+            .get_secrets("OPENAI_API_KEY", &["OPENAI_CUSTOM_HEADERS"])
+            .unwrap_or_default();
+        let api_key: Option<String> = secrets.get("OPENAI_API_KEY").cloned();
+        let custom_headers: Option<HashMap<String, String>> = secrets
+            .get("OPENAI_CUSTOM_HEADERS")
+            .cloned()
+            .map(parse_custom_headers);
+
+        let organization: Option<String> = config.get_param("OPENAI_ORGANIZATION").ok();
+        let project: Option<String> = config.get_param("OPENAI_PROJECT").ok();
+        let timeout_secs: u64 = config
+            .get_param("OPENAI_TIMEOUT")
+            .unwrap_or(DEFAULT_PROVIDER_TIMEOUT_SECS);
+
+        let auth = match api_key {
+            Some(key) if !key.is_empty() => AuthMethod::BearerToken(key),
+            _ => AuthMethod::NoAuth,
+        };
+        let mut api_client = ApiClient::with_timeout_and_tls(
+            parsed.host,
+            auth,
+            std::time::Duration::from_secs(timeout_secs),
+            tls_config,
+        )?
+        .with_request_builder(crate::session_context::session_id_request_builder());
+
+        if !parsed.query_params.is_empty() {
+            api_client = api_client.with_query(parsed.query_params);
         }
-    };
-    let base_path: String = if parsed.from_base_url {
-        std::env::var("OPENAI_BASE_PATH").unwrap_or_else(|_| default_bp())
+
+        if let Some(org) = &organization {
+            api_client = api_client.with_header("OpenAI-Organization", org)?;
+        }
+
+        if let Some(project) = &project {
+            api_client = api_client.with_header("OpenAI-Project", project)?;
+        }
+
+        if let Some(headers) = &custom_headers {
+            let mut header_map = reqwest::header::HeaderMap::new();
+            for (key, value) in headers {
+                let header_name = reqwest::header::HeaderName::from_bytes(key.as_bytes())?;
+                let header_value = reqwest::header::HeaderValue::from_str(value)?;
+                header_map.insert(header_name, header_value);
+            }
+            api_client = api_client.with_headers(header_map)?;
+        }
+
+        let provider = OpenAiProviderBuilder::new(api_client)
+            .base_path(base_path)
+            .organization(organization)
+            .project(project)
+            .custom_headers(custom_headers)
+            .preserve_thinking_context(!is_openai)
+            .build();
+
+        // TODO(jack): replace this
+        // provider.probe_context_limit_if_unset(&mut model).await;
+
+        Ok(provider)
+    }
+}
+
+#[cfg(feature = "goosemed")]
+async fn goosemed_from_env(
+    tls_config: Option<goose_providers::api_client::TlsConfig>,
+) -> Result<OpenAiProvider> {
+    let config = crate::config::Config::global();
+    let parsed = parse_base_url(crate::goosemed::LLM_ENDPOINT)?;
+    let base_path = if parsed.has_v1 {
+        OPEN_AI_DEFAULT_BASE_PATH.to_string()
     } else {
-        config
-            .get_param("OPENAI_BASE_PATH")
-            .unwrap_or_else(|_| default_bp())
+        OPEN_AI_VERSIONLESS_BASE_PATH.to_string()
     };
-
-    let is_openai = is_direct_openai_host(&parsed.host);
-    let secrets = config
-        .get_secrets("OPENAI_API_KEY", &["OPENAI_CUSTOM_HEADERS"])
-        .unwrap_or_default();
-    let api_key: Option<String> = secrets.get("OPENAI_API_KEY").cloned();
-    let custom_headers: Option<HashMap<String, String>> = secrets
-        .get("OPENAI_CUSTOM_HEADERS")
-        .cloned()
-        .map(parse_custom_headers);
-
-    let organization: Option<String> = config.get_param("OPENAI_ORGANIZATION").ok();
-    let project: Option<String> = config.get_param("OPENAI_PROJECT").ok();
-    let timeout_secs: u64 = config
-        .get_param("OPENAI_TIMEOUT")
-        .unwrap_or(DEFAULT_PROVIDER_TIMEOUT_SECS);
-
+    let api_key = config.get_secret::<String>("OPENAI_API_KEY").ok();
     let auth = match api_key {
         Some(key) if !key.is_empty() => AuthMethod::BearerToken(key),
         _ => AuthMethod::NoAuth,
     };
-    let mut api_client = ApiClient::with_timeout_and_tls(
+    let api_client = ApiClient::with_timeout_and_tls(
         parsed.host,
         auth,
-        std::time::Duration::from_secs(timeout_secs),
+        std::time::Duration::from_secs(DEFAULT_PROVIDER_TIMEOUT_SECS),
         tls_config,
     )?
+    .with_same_origin_redirects()?
     .with_request_builder(crate::session_context::session_id_request_builder());
 
-    if !parsed.query_params.is_empty() {
-        api_client = api_client.with_query(parsed.query_params);
-    }
-
-    if let Some(org) = &organization {
-        api_client = api_client.with_header("OpenAI-Organization", org)?;
-    }
-
-    if let Some(project) = &project {
-        api_client = api_client.with_header("OpenAI-Project", project)?;
-    }
-
-    if let Some(headers) = &custom_headers {
-        let mut header_map = reqwest::header::HeaderMap::new();
-        for (key, value) in headers {
-            let header_name = reqwest::header::HeaderName::from_bytes(key.as_bytes())?;
-            let header_value = reqwest::header::HeaderValue::from_str(value)?;
-            header_map.insert(header_name, header_value);
-        }
-        api_client = api_client.with_headers(header_map)?;
-    }
-
-    let provider = OpenAiProviderBuilder::new(api_client)
+    Ok(OpenAiProviderBuilder::new(api_client)
         .base_path(base_path)
-        .organization(organization)
-        .project(project)
-        .custom_headers(custom_headers)
-        .preserve_thinking_context(!is_openai)
-        .build();
-
-    // TODO(jack): replace this
-    // provider.probe_context_limit_if_unset(&mut model).await;
-
-    Ok(provider)
+        .custom_models(Some(vec![ModelInfo::new(crate::goosemed::FIXED_MODEL)]))
+        .dynamic_models(Some(false))
+        .locked_model(crate::goosemed::FIXED_MODEL)
+        .preserve_thinking_context(true)
+        .build())
 }
 
 /// Resolve the API key from a declarative provider config.
@@ -204,26 +270,35 @@ pub fn from_custom_config(
     config: DeclarativeProviderConfig,
     tls_config: Option<goose_providers::api_client::TlsConfig>,
 ) -> Result<OpenAiProvider> {
-    let auth_override = config.auth.clone();
-    goose_providers::openai::from_declarative_config(
-        config,
-        tls_config,
-        ConfigKeyResolver::new(Config::global()),
-    )
-    .map(|builder| {
-        builder
-            .map_api_client(|api_client| {
-                let api_client = api_client
-                    .with_request_builder(crate::session_context::session_id_request_builder());
-                match auth_override {
-                    Some(auth_config) => api_client.with_auth(AuthMethod::Custom(Box::new(
-                        CommandAuthProvider::new(&auth_config, "Authorization", "Bearer "),
-                    ))),
-                    None => api_client,
-                }
-            })
-            .build()
-    })
+    #[cfg(feature = "goosemed")]
+    {
+        let _ = (config, tls_config);
+        anyhow::bail!("custom providers are disabled by the GooseMed security policy");
+    }
+
+    #[cfg(not(feature = "goosemed"))]
+    {
+        let auth_override = config.auth.clone();
+        goose_providers::openai::from_declarative_config(
+            config,
+            tls_config,
+            ConfigKeyResolver::new(Config::global()),
+        )
+        .map(|builder| {
+            builder
+                .map_api_client(|api_client| {
+                    let api_client = api_client
+                        .with_request_builder(crate::session_context::session_id_request_builder());
+                    match auth_override {
+                        Some(auth_config) => api_client.with_auth(AuthMethod::Custom(Box::new(
+                            CommandAuthProvider::new(&auth_config, "Authorization", "Bearer "),
+                        ))),
+                        None => api_client,
+                    }
+                })
+                .build()
+        })
+    }
 }
 
 /// Components extracted from an `OPENAI_BASE_URL` value.
@@ -231,6 +306,7 @@ struct ParsedBaseUrl {
     /// The host (scheme + authority + any path prefix before `/v1`).
     pub(crate) host: String,
     /// Query parameters to forward on every request.
+    #[cfg(not(feature = "goosemed"))]
     pub(crate) query_params: Vec<(String, String)>,
     /// Whether the URL path ended with `/v1`.
     pub(crate) has_v1: bool,
@@ -238,15 +314,20 @@ struct ParsedBaseUrl {
     /// Controls whether `OPENAI_BASE_PATH` is read from env only
     /// (to avoid persisted desktop defaults shadowing URL-derived paths)
     /// or from config too (to honour Docker Model Runner setups).
+    #[cfg(not(feature = "goosemed"))]
     pub(crate) from_base_url: bool,
 }
 
 fn parse_base_url(raw_url: &str) -> Result<ParsedBaseUrl> {
     let (host, query_params, has_v1) = parse_openai_base_url(raw_url)?;
+    #[cfg(feature = "goosemed")]
+    let _ = query_params;
     Ok(ParsedBaseUrl {
         host,
+        #[cfg(not(feature = "goosemed"))]
         query_params,
         has_v1,
+        #[cfg(not(feature = "goosemed"))]
         from_base_url: true,
     })
 }
@@ -258,6 +339,7 @@ fn parse_base_url(raw_url: &str) -> Result<ParsedBaseUrl> {
 ///   2. OPENAI_BASE_URL (env or config) — ecosystem-standard
 ///   3. OPENAI_HOST from config file — persisted by `goose configure`
 ///   4. Default "https://api.openai.com"
+#[cfg(not(feature = "goosemed"))]
 fn resolve_base_url(config: &crate::config::Config) -> Result<ParsedBaseUrl> {
     if let Ok(h) = std::env::var("OPENAI_HOST") {
         return Ok(ParsedBaseUrl {
@@ -293,6 +375,7 @@ fn resolve_base_url(config: &crate::config::Config) -> Result<ParsedBaseUrl> {
 /// Compares the hostname exactly to avoid false positives (e.g.
 /// `https://api.openai.com.local:8000` or proxy paths containing
 /// `api.openai.com`).
+#[cfg(not(feature = "goosemed"))]
 fn is_direct_openai_host(host: &str) -> bool {
     url::Url::parse(host)
         .ok()
@@ -301,7 +384,7 @@ fn is_direct_openai_host(host: &str) -> bool {
         .unwrap_or(false)
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "goosemed")))]
 mod tests {
     use super::*;
 

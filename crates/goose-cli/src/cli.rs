@@ -9,14 +9,14 @@ use goose::config::{Config, GooseMode};
 use goose::posthog::get_telemetry_choice;
 use goose::recipe::Recipe;
 use goose::source_roots::SourceRoot;
+#[cfg(not(feature = "goosemed"))]
 use goose_mcp::mcp_server_runner::{serve, McpCommand};
+#[cfg(not(feature = "goosemed"))]
 use goose_mcp::{AutoVisualiserRouter, ComputerControllerServer, MemoryServer, TutorialServer};
 
 #[cfg(feature = "telemetry")]
 use crate::commands::configure::configure_telemetry_consent_dialog;
-use crate::commands::configure::handle_configure;
 use crate::commands::info::handle_info;
-use crate::commands::plugin::{handle_plugin_install, handle_plugin_update};
 use crate::commands::recipe::{handle_deeplink, handle_list, handle_open, handle_validate};
 #[cfg(feature = "roaming")]
 use crate::commands::roam::{handle_roam_command, RoamCommand};
@@ -145,67 +145,19 @@ pub struct StreamableHttpOptions {
     pub timeout: u64,
 }
 
-fn parse_streamable_http_extension(input: &str) -> Result<StreamableHttpOptions, String> {
-    let mut input_iter = input.split_whitespace();
-    let (mut url, mut timeout) = (String::new(), goose::config::DEFAULT_EXTENSION_TIMEOUT);
-
-    if let Some(url_str) = input_iter.next() {
-        url.push_str(url_str);
-    }
-
-    for kv_pair in input_iter {
-        if !kv_pair.contains('=') {
-            continue;
-        }
-
-        let (key, value) = kv_pair.split_once('=').unwrap();
-
-        // We Can have more keys here for setting other properties
-        if key == "timeout" {
-            if let Ok(seconds) = value.parse::<u64>() {
-                timeout = seconds;
-            }
-        }
-    }
-
-    Ok(StreamableHttpOptions { url, timeout })
-}
-
 /// Extension configuration options shared between Session and Run commands
 #[derive(Args, Debug, Clone, Default)]
 pub struct ExtensionOptions {
-    #[arg(
-        long = "with-extension",
-        value_name = "COMMAND",
-        help = "Add stdio extensions (can be specified multiple times)",
-        long_help = "Add stdio extensions from full commands with environment variables. Can be specified multiple times. Format: '[name:]ENV1=val1 ENV2=val2 command args...'. Without the optional name, the extension is named after the command, which is the launcher for anything started through one ('npx', 'python', 'uvx', ...); extensions that would end up sharing a name are instead named after their full command line.",
-        action = clap::ArgAction::Append
-    )]
+    #[arg(skip)]
     pub extensions: Vec<String>,
 
-    #[arg(
-        long = "with-streamable-http-extension",
-        value_name = "URL",
-        help = "Add streamable HTTP extensions (can be specified multiple times)",
-        long_help = "Add streamable HTTP extensions from a URL. Can be specified multiple times. Format: 'url...' or 'url... timeout=100' to set up timeout other than default",
-        action = clap::ArgAction::Append,
-        value_parser = parse_streamable_http_extension
-    )]
+    #[arg(skip)]
     pub streamable_http_extensions: Vec<StreamableHttpOptions>,
 
-    #[arg(
-        long = "with-builtin",
-        value_name = "NAME",
-        help = "Add builtin extensions by name (e.g., 'developer' or multiple: 'developer,github')",
-        long_help = "Add one or more builtin extensions that are bundled with goose by specifying their names, comma-separated",
-        value_delimiter = ','
-    )]
+    #[arg(skip)]
     pub builtins: Vec<String>,
 
-    #[arg(
-        long = "no-profile",
-        help = "Don't load your default extensions, only use CLI-specified extensions"
-    )]
+    #[arg(skip)]
     pub no_profile: bool,
 }
 
@@ -326,22 +278,10 @@ impl Default for OutputOptions {
 /// Model/provider override options
 #[derive(Args, Debug, Clone, Default)]
 pub struct ModelOptions {
-    /// Provider to use for this run (overrides environment variable)
-    #[arg(
-        long = "provider",
-        value_name = "PROVIDER",
-        help = "Specify the LLM provider to use (e.g., 'openai', 'anthropic')",
-        long_help = "Override the GOOSE_PROVIDER environment variable for this run. Available providers include openai, anthropic, ollama, databricks, gemini-cli, claude-code, and others."
-    )]
+    #[arg(skip)]
     pub provider: Option<String>,
 
-    /// Model to use for this run (overrides environment variable)
-    #[arg(
-        long = "model",
-        value_name = "MODEL",
-        help = "Specify the model to use (e.g., 'gpt-4o', 'claude-sonnet-4-20250514')",
-        long_help = "Override the GOOSE_MODEL environment variable for this run. The model must be supported by the specified provider."
-    )]
+    #[arg(skip)]
     pub model: Option<String>,
 }
 
@@ -704,29 +644,6 @@ enum GatewayCommand {
 }
 
 #[derive(Subcommand)]
-enum PluginCommand {
-    /// Install a plugin from a git repository URL
-    #[command(about = "Install a plugin from a git repository URL")]
-    Install {
-        #[arg(
-            long,
-            help = "Automatically update this plugin before plugin skills are loaded"
-        )]
-        auto_update: bool,
-
-        #[arg(help = "URL to a git repository containing a supported plugin")]
-        url: String,
-    },
-
-    /// Update an installed git-backed plugin
-    #[command(about = "Update an installed git-backed plugin")]
-    Update {
-        #[arg(help = "Name of the installed plugin to update")]
-        name: String,
-    },
-}
-
-#[derive(Subcommand)]
 enum SkillsCommand {
     /// List all skills available to the goose agent
     #[command(about = "List all skills available to the goose agent")]
@@ -801,10 +718,6 @@ enum RecipeCommand {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Configure goose settings
-    #[command(about = "Configure goose settings")]
-    Configure {},
-
     /// Display goose configuration information
     #[command(about = "Display goose information")]
     Info {
@@ -819,6 +732,7 @@ enum Command {
     Doctor {},
 
     /// Manage system prompts and behaviors
+    #[cfg(not(feature = "goosemed"))]
     #[command(about = "Run one of the mcp servers bundled with goose")]
     Mcp {
         #[arg(value_parser = clap::value_parser!(McpCommand))]
@@ -828,14 +742,7 @@ enum Command {
     /// Run goose as an ACP (Agent Client Protocol) agent
     #[command(about = "Run goose as an ACP agent server on stdio")]
     Acp {
-        /// Add builtin extensions by name
-        #[arg(
-            long = "with-builtin",
-            value_name = "NAME",
-            help = "Add builtin extensions by name (e.g., 'developer' or multiple: 'developer,github')",
-            long_help = "Add one or more builtin extensions that are bundled with goose by specifying their names, comma-separated",
-            value_delimiter = ','
-        )]
+        #[arg(skip)]
         builtins: Vec<String>,
 
         #[arg(long, help = "Enable scheduled recipe execution")]
@@ -871,14 +778,7 @@ enum Command {
         #[arg(long, value_enum, default_value_t = ServePlatform::Cli)]
         platform: ServePlatform,
 
-        #[arg(
-            long = "with-builtin",
-            value_name = "NAME",
-            help = "Add builtin extensions by name (e.g., 'developer' or multiple: 'developer,github')",
-            long_help = "Add one or more builtin extensions that are bundled with goose by specifying their names, comma-separated",
-            value_delimiter = ',',
-            action = clap::ArgAction::Append
-        )]
+        #[arg(skip)]
         builtins: Vec<String>,
 
         #[arg(
@@ -1012,13 +912,6 @@ enum Command {
         command: SkillsCommand,
     },
 
-    /// Manage plugins
-    #[command(about = "Manage plugins")]
-    Plugin {
-        #[command(subcommand)]
-        command: PluginCommand,
-    },
-
     /// Manage scheduled jobs
     #[command(about = "Manage scheduled jobs", visible_alias = "sched")]
     Schedule {
@@ -1073,7 +966,7 @@ enum Command {
     },
 
     /// Manage local inference models
-    #[cfg(feature = "local-inference")]
+    #[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
     #[command(about = "Manage local inference models", visible_alias = "lm")]
     LocalModels {
         #[command(subcommand)]
@@ -1112,16 +1005,16 @@ enum Command {
 
         /// Default model used for the main review agent and for any check
         /// that does not declare its own `model:` in frontmatter.
-        #[arg(long = "model", value_name = "MODEL")]
+        #[arg(skip)]
         model: Option<String>,
 
         /// Provider for the main review agent.
-        #[arg(long = "provider", value_name = "PROVIDER")]
+        #[arg(skip)]
         provider: Option<String>,
 
         /// Force every discovered check to use this model, regardless of
         /// the check's own `model:` field.
-        #[arg(long = "override-model", value_name = "MODEL")]
+        #[arg(skip)]
         override_model: Option<String>,
 
         /// Default `turn-limit` for orchestrated main-pass subprocesses and
@@ -1200,26 +1093,9 @@ enum Command {
         #[arg(help = "Path to the bundled-extensions.json file")]
         file: PathBuf,
     },
-
-    #[command(
-        name = "mcp-probe",
-        about = "Start a Goose MCP session without an LLM and inspect a stdio MCP server",
-        hide = true
-    )]
-    McpProbe {
-        #[arg(help = "Stdio MCP server command to inspect")]
-        extension: String,
-
-        #[arg(
-            long,
-            value_name = "PATH|-",
-            help = "JSON probe script; use - for stdin"
-        )]
-        script: Option<String>,
-    },
 }
 
-#[cfg(feature = "local-inference")]
+#[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
 #[derive(Subcommand)]
 enum LocalModelsCommand {
     /// Search HuggingFace for local models
@@ -1378,9 +1254,9 @@ pub struct InputConfig {
 
 fn get_command_name(command: &Option<Command>) -> &'static str {
     match command {
-        Some(Command::Configure {}) => "configure",
         Some(Command::Doctor {}) => "doctor",
         Some(Command::Info { .. }) => "info",
+        #[cfg(not(feature = "goosemed"))]
         Some(Command::Mcp { .. }) => "mcp",
         Some(Command::Acp { .. }) => "acp",
         #[cfg(feature = "roaming")]
@@ -1394,223 +1270,17 @@ fn get_command_name(command: &Option<Command>) -> &'static str {
         Some(Command::Update { .. }) => "update",
         Some(Command::Recipe { .. }) => "recipe",
         Some(Command::Skills { .. }) => "skills",
-        Some(Command::Plugin { .. }) => "plugin",
         Some(Command::Term { .. }) => "term",
-        #[cfg(feature = "local-inference")]
+        #[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
         Some(Command::LocalModels { .. }) => "local-models",
         Some(Command::Completion { .. }) => "completion",
         Some(Command::Review { .. }) => "review",
         Some(Command::ValidateExtensions { .. }) => "validate-extensions",
-        Some(Command::McpProbe { .. }) => "mcp-probe",
         None => "default_session",
     }
 }
 
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct McpProbeScript {
-    #[serde(default)]
-    steps: Vec<McpProbeStep>,
-    elicitation: Option<McpProbeElicitation>,
-    #[serde(default)]
-    oauth: goose::oauth::OAuthFlowConfig,
-    protocol_version: Option<String>,
-}
-
-#[derive(serde::Deserialize)]
-#[serde(tag = "action", rename_all = "camelCase")]
-enum McpProbeStep {
-    ListTools,
-    ListPrompts,
-    ListResources,
-    CallTool {
-        name: String,
-        #[serde(default)]
-        arguments: serde_json::Map<String, serde_json::Value>,
-    },
-}
-
-#[derive(Clone, serde::Deserialize)]
-#[serde(tag = "action", rename_all = "camelCase")]
-enum McpProbeElicitation {
-    Accept { content: serde_json::Value },
-    AcceptSchemaDefaults,
-    Decline,
-    Cancel,
-}
-
-async fn handle_mcp_probe(extension_command: String, script_path: Option<String>) -> Result<()> {
-    use goose::agents::{Agent, AgentConfig, ToolCallContext};
-    use goose::config::ExtensionConfig;
-    use rmcp::model::{ElicitRequestParams, ElicitResult, ElicitationAction};
-    use tokio_util::sync::CancellationToken;
-
-    let script = if let Some(path) = script_path {
-        let json = if path == "-" {
-            let mut json = String::new();
-            std::io::stdin().read_to_string(&mut json)?;
-            json
-        } else {
-            std::fs::read_to_string(path)?
-        };
-        serde_json::from_str::<McpProbeScript>(&json)?
-    } else {
-        McpProbeScript {
-            steps: vec![
-                McpProbeStep::ListTools,
-                McpProbeStep::ListPrompts,
-                McpProbeStep::ListResources,
-            ],
-            elicitation: None,
-            oauth: goose::oauth::OAuthFlowConfig::default(),
-            protocol_version: None,
-        }
-    };
-
-    let mut extension = if url::Url::parse(&extension_command)
-        .is_ok_and(|url| matches!(url.scheme(), "http" | "https"))
-    {
-        crate::session::CliSession::parse_streamable_http_extension(
-            &extension_command,
-            goose::config::DEFAULT_EXTENSION_TIMEOUT,
-        )
-    } else {
-        crate::session::CliSession::parse_stdio_extension(&extension_command)?
-    };
-    match &mut extension {
-        ExtensionConfig::Stdio { name, .. } | ExtensionConfig::StreamableHttp { name, .. } => {
-            *name = "probe".to_string();
-        }
-        _ => unreachable!("MCP probe only creates stdio or streamable HTTP extensions"),
-    }
-
-    if let Some(client_id) = &script.oauth.client_id {
-        std::env::set_var("GOOSE_MCP_OAUTH_CLIENT_ID", client_id);
-    }
-    if let Some(client_secret) = &script.oauth.client_secret {
-        std::env::set_var("GOOSE_MCP_OAUTH_CLIENT_SECRET", client_secret);
-    }
-    if let Some(client_metadata_url) = &script.oauth.client_metadata_url {
-        std::env::set_var("GOOSE_MCP_OAUTH_CLIENT_METADATA_URL", client_metadata_url);
-    }
-
-    let config = goose::config::Config::global();
-    let mut agent_config = AgentConfig::new(
-        std::sync::Arc::new(SessionManager::instance()),
-        goose::config::permission::PermissionManager::instance(),
-        None,
-        config.get_goose_mode().unwrap_or_default(),
-        true,
-        GoosePlatform::GooseCli,
-    );
-    if let Some(protocol_version) = script.protocol_version.as_deref() {
-        agent_config.mcp_protocol_version = Some(serde_json::from_value(
-            serde_json::Value::String(protocol_version.to_string()),
-        )?);
-    }
-    if let Some(action) = script.elicitation.clone() {
-        agent_config.elicitation_handler =
-            Some(std::sync::Arc::new(move |request| match &action {
-                McpProbeElicitation::Accept { content } => {
-                    ElicitResult::new(ElicitationAction::Accept).with_content(content.clone())
-                }
-                McpProbeElicitation::AcceptSchemaDefaults => {
-                    let content = match request {
-                        ElicitRequestParams::FormElicitationParams {
-                            requested_schema, ..
-                        } => serde_json::to_value(requested_schema)
-                            .ok()
-                            .and_then(|schema| schema.get("properties").cloned())
-                            .and_then(|properties| properties.as_object().cloned())
-                            .map(|properties| {
-                                properties
-                                    .into_iter()
-                                    .filter_map(|(name, schema)| {
-                                        schema.get("default").cloned().map(|value| (name, value))
-                                    })
-                                    .collect()
-                            })
-                            .unwrap_or_default(),
-                        _ => serde_json::Map::new(),
-                    };
-                    ElicitResult::new(ElicitationAction::Accept)
-                        .with_content(serde_json::Value::Object(content))
-                }
-                McpProbeElicitation::Decline => ElicitResult::new(ElicitationAction::Decline),
-                McpProbeElicitation::Cancel => ElicitResult::new(ElicitationAction::Cancel),
-            }));
-    }
-    let agent = Agent::with_config(agent_config);
-    let session = agent
-        .config
-        .session_manager
-        .create_session(
-            std::env::current_dir()?,
-            "MCP Probe".to_string(),
-            goose::session::session_manager::SessionType::Hidden,
-            agent.config.goose_mode,
-        )
-        .await?;
-    let session_id = session.id.as_str();
-    agent.add_extension(extension, session_id).await?;
-
-    let mut results = Vec::new();
-    for step in script.steps {
-        let result = match step {
-            McpProbeStep::ListTools => serde_json::json!({
-                "action": "listTools",
-                "result": agent.extension_manager.list_tools_from_extension(
-                    session_id,
-                    "probe",
-                    CancellationToken::new(),
-                ).await?,
-            }),
-            McpProbeStep::ListPrompts => serde_json::json!({
-                "action": "listPrompts",
-                "result": agent.extension_manager.list_prompts_from_extension(
-                    session_id,
-                    "probe",
-                    CancellationToken::new(),
-                ).await?,
-            }),
-            McpProbeStep::ListResources => serde_json::json!({
-                "action": "listResources",
-                "result": agent.extension_manager.list_resources_result_from_extension(
-                    session_id,
-                    "probe",
-                    CancellationToken::new(),
-                ).await?,
-            }),
-            McpProbeStep::CallTool { name, arguments } => {
-                let scoped_name = format!("probe__{name}");
-                let ctx = ToolCallContext::new(
-                    session_id.to_string(),
-                    Some(std::env::current_dir()?),
-                    Some("mcp-probe-tool-call".to_string()),
-                );
-                let result = agent
-                    .extension_manager
-                    .dispatch_tool_call(
-                        &ctx,
-                        rmcp::model::CallToolRequestParams::new(scoped_name)
-                            .with_arguments(arguments),
-                        CancellationToken::new(),
-                    )
-                    .await?
-                    .result
-                    .await?;
-                serde_json::json!({ "action": "callTool", "name": name, "result": result })
-            }
-        };
-        results.push(result);
-    }
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&serde_json::json!({ "results": results }))?
-    );
-    Ok(())
-}
-
+#[cfg(not(feature = "goosemed"))]
 async fn handle_mcp_command(server: McpCommand) -> Result<()> {
     let name = server.name();
     let _ = crate::logging::setup_logging(Some(&format!("mcp-{name}")));
@@ -2373,13 +2043,6 @@ async fn handle_schedule_command(command: SchedulerCommand) -> Result<()> {
     }
 }
 
-fn handle_plugin_subcommand(command: PluginCommand) -> Result<()> {
-    match command {
-        PluginCommand::Install { url, auto_update } => handle_plugin_install(&url, auto_update),
-        PluginCommand::Update { name } => handle_plugin_update(&name),
-    }
-}
-
 fn handle_recipe_subcommand(command: RecipeCommand) -> Result<()> {
     match command {
         RecipeCommand::Validate { recipe_name } => handle_validate(&recipe_name),
@@ -2417,7 +2080,7 @@ async fn handle_term_subcommand(command: TermCommand) -> Result<()> {
     }
 }
 
-#[cfg(feature = "local-inference")]
+#[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
 fn print_download_progress(manager: &goose::download_manager::DownloadManager) {
     let Some(progress) = manager
         .list_progress()
@@ -2437,7 +2100,7 @@ fn print_download_progress(manager: &goose::download_manager::DownloadManager) {
     std::io::stdout().flush().ok();
 }
 
-#[cfg(feature = "local-inference")]
+#[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
 fn gb_to_bytes(gb: f64) -> Result<u64> {
     if !gb.is_finite() || gb <= 0.0 {
         anyhow::bail!("--ram-gb must be a positive number");
@@ -2445,7 +2108,7 @@ fn gb_to_bytes(gb: f64) -> Result<u64> {
     Ok((gb * 1024.0 * 1024.0 * 1024.0) as u64)
 }
 
-#[cfg(feature = "local-inference")]
+#[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
 fn search_query_from_filters(
     query: Option<String>,
     repo_prefix: Option<&str>,
@@ -2472,7 +2135,7 @@ fn search_query_from_filters(
     String::new()
 }
 
-#[cfg(feature = "local-inference")]
+#[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
 fn search_term_from_repo_filter(value: &str) -> String {
     value
         .trim_matches('/')
@@ -2483,7 +2146,7 @@ fn search_term_from_repo_filter(value: &str) -> String {
         .to_string()
 }
 
-#[cfg(feature = "local-inference")]
+#[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
 fn local_search_memory_limit(ram_gb: Option<f64>) -> Result<u64> {
     if let Some(gb) = ram_gb {
         return gb_to_bytes(gb);
@@ -2497,7 +2160,7 @@ fn local_search_memory_limit(ram_gb: Option<f64>) -> Result<u64> {
     }
 }
 
-#[cfg(feature = "local-inference")]
+#[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
 fn format_size(bytes: u64) -> String {
     if bytes == 0 {
         "unknown".to_string()
@@ -2506,7 +2169,7 @@ fn format_size(bytes: u64) -> String {
     }
 }
 
-#[cfg(feature = "local-inference")]
+#[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
 fn recommended_variant(
     model: &goose::providers::local_inference::hf_models::HfModelInfo,
     available_memory: u64,
@@ -2535,7 +2198,7 @@ fn recommended_variant(
         .map(|index| &model.variants[variant_indexes[index]])
 }
 
-#[cfg(feature = "local-inference")]
+#[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
 async fn handle_local_models_command(command: LocalModelsCommand) -> Result<()> {
     use goose::providers::local_inference::hf_models;
 
@@ -2737,10 +2400,6 @@ async fn handle_local_models_command(command: LocalModelsCommand) -> Result<()> 
 }
 
 async fn handle_default_session() -> Result<()> {
-    if !Config::global().exists() {
-        return handle_configure().await;
-    }
-
     #[cfg(feature = "telemetry")]
     if get_telemetry_choice().is_none() {
         configure_telemetry_consent_dialog()?;
@@ -2794,9 +2453,9 @@ pub async fn cli() -> anyhow::Result<()> {
             shell.generate(&mut cmd, &bin_name, &mut std::io::stdout());
             Ok(())
         }
-        Some(Command::Configure {}) => handle_configure().await,
         Some(Command::Doctor {}) => crate::commands::doctor::handle_doctor().await,
         Some(Command::Info { verbose, check }) => handle_info(verbose, check).await,
+        #[cfg(not(feature = "goosemed"))]
         Some(Command::Mcp { server }) => handle_mcp_command(server).await,
         Some(Command::Acp {
             builtins,
@@ -2894,9 +2553,8 @@ pub async fn cli() -> anyhow::Result<()> {
         }
         Some(Command::Recipe { command }) => handle_recipe_subcommand(command),
         Some(Command::Skills { command }) => handle_skills_subcommand(command).await,
-        Some(Command::Plugin { command }) => handle_plugin_subcommand(command),
         Some(Command::Term { command }) => handle_term_subcommand(command).await,
-        #[cfg(feature = "local-inference")]
+        #[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
         Some(Command::LocalModels { command }) => handle_local_models_command(command).await,
         Some(Command::Review {
             range,
@@ -2950,7 +2608,6 @@ pub async fn cli() -> anyhow::Result<()> {
                 }
             }
         }
-        Some(Command::McpProbe { extension, script }) => handle_mcp_probe(extension, script).await,
         None => handle_default_session().await,
     }
 }
@@ -2973,8 +2630,8 @@ mod tests {
     }
 
     #[test]
-    fn session_resume_accepts_provider_and_model_overrides() {
-        let cli = Cli::try_parse_from([
+    fn session_rejects_provider_and_model_overrides() {
+        let result = Cli::try_parse_from([
             "goose",
             "session",
             "--resume",
@@ -2982,51 +2639,28 @@ mod tests {
             "openai",
             "--model",
             "gpt-5.4",
-        ])
-        .expect("parse failed");
+        ]);
 
-        match cli.command {
-            Some(Command::Session {
-                resume, model_opts, ..
-            }) => {
-                assert!(resume);
-                assert_eq!(model_opts.provider.as_deref(), Some("openai"));
-                assert_eq!(model_opts.model.as_deref(), Some("gpt-5.4"));
-            }
-            _ => panic!("expected session command"),
-        }
+        assert!(result.is_err());
     }
 
     #[test]
-    fn session_accepts_provider_override_without_resume() {
-        let cli = Cli::try_parse_from(["goose", "session", "--provider", "openai"])
-            .expect("provider override should work for a new session");
+    fn session_rejects_arbitrary_extension_flags() {
+        let result =
+            Cli::try_parse_from(["goose", "session", "--with-extension", "python server.py"]);
 
-        match cli.command {
-            Some(Command::Session {
-                resume, model_opts, ..
-            }) => {
-                assert!(!resume);
-                assert_eq!(model_opts.provider.as_deref(), Some("openai"));
-            }
-            _ => panic!("expected session command"),
-        }
+        assert!(result.is_err());
     }
 
     #[test]
-    fn session_accepts_model_override_without_resume() {
-        let cli = Cli::try_parse_from(["goose", "session", "--model", "gpt-5.4"])
-            .expect("model override should work for a new session");
-
-        match cli.command {
-            Some(Command::Session {
-                resume, model_opts, ..
-            }) => {
-                assert!(!resume);
-                assert_eq!(model_opts.model.as_deref(), Some("gpt-5.4"));
-            }
-            _ => panic!("expected session command"),
-        }
+    fn removed_configuration_commands_are_rejected() {
+        assert!(Cli::try_parse_from(["goose", "configure"]).is_err());
+        assert!(
+            Cli::try_parse_from(["goose", "plugin", "install", "https://example.test"]).is_err()
+        );
+        assert!(Cli::try_parse_from(["goose", "mcp-probe", "python server.py"]).is_err());
+        assert!(Cli::try_parse_from(["goose", "mcp", "memory"]).is_err());
+        assert!(Cli::try_parse_from(["goose", "local-models", "search", "qwen"]).is_err());
     }
 
     #[test]
@@ -3132,12 +2766,6 @@ mod tests {
             "origin/main...HEAD",
             "--prompt",
             "REVIEW.md",
-            "--model",
-            "test-model",
-            "--provider",
-            "openai",
-            "--override-model",
-            "check-model",
             "--turn-limit",
             "4",
             "--dry-run",
@@ -3179,9 +2807,9 @@ mod tests {
             }) => {
                 assert_eq!(range.as_deref(), Some("origin/main...HEAD"));
                 assert_eq!(prompt.as_deref(), Some(std::path::Path::new("REVIEW.md")));
-                assert_eq!(model.as_deref(), Some("test-model"));
-                assert_eq!(provider.as_deref(), Some("openai"));
-                assert_eq!(override_model.as_deref(), Some("check-model"));
+                assert!(model.is_none());
+                assert!(provider.is_none());
+                assert!(override_model.is_none());
                 assert_eq!(turn_limit, Some(4));
                 assert!(dry_run);
                 assert!(quiet);
@@ -3201,7 +2829,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "local-inference")]
+    #[cfg(all(feature = "local-inference", not(feature = "goosemed")))]
     mod local_search {
         use super::super::{
             format_size, gb_to_bytes, search_query_from_filters, search_term_from_repo_filter,

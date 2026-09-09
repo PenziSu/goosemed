@@ -47,6 +47,8 @@ pub enum ConfigError {
     KeyringError(String),
     #[error("Failed to lock config file: {0}")]
     LockError(String),
+    #[error("GooseMed security policy rejected the configuration: {0}")]
+    PolicyViolation(String),
     #[error("Secret stored using file-based fallback")]
     FallbackToFileStorage,
 }

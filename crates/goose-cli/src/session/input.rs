@@ -15,15 +15,12 @@ use strum::VariantNames;
 pub enum InputResult {
     Message(String),
     Exit,
-    AddExtension(String),
-    AddBuiltin(String),
     ToggleTheme,
     SelectTheme(String),
     Retry,
     ListPrompts(Option<String>),
     PromptCommand(PromptCommandOptions),
     GooseMode(String),
-    Model(ModelCommandOptions),
     Plan(PlanCommandOptions),
     EndPlan,
     Clear,
@@ -46,12 +43,6 @@ pub struct PromptCommandOptions {
 #[derive(Debug)]
 pub struct PlanCommandOptions {
     pub message_text: String,
-}
-
-#[derive(Debug, Default)]
-pub struct ModelCommandOptions {
-    pub provider: Option<String>,
-    pub model: Option<String>,
 }
 
 struct CtrlCHandler {
@@ -232,11 +223,7 @@ fn handle_slash_command(input: &str) -> Option<InputResult> {
     const CMD_PROMPTS: &str = "/prompts ";
     const CMD_PROMPT: &str = "/prompt";
     const CMD_PROMPT_WITH_SPACE: &str = "/prompt ";
-    const CMD_EXTENSION: &str = "/extension ";
-    const CMD_BUILTIN: &str = "/builtin ";
     const CMD_MODE: &str = "/mode ";
-    const CMD_MODEL: &str = "/model";
-    const CMD_MODEL_WITH_SPACE: &str = "/model ";
     const CMD_PLAN: &str = "/plan";
     const CMD_ENDPLAN: &str = "/endplan";
     const CMD_CLEAR: &str = "/clear";
@@ -294,44 +281,9 @@ fn handle_slash_command(input: &str) -> Option<InputResult> {
                 None
             }
         }
-        s if s.starts_with(CMD_EXTENSION) => Some(InputResult::AddExtension(
-            s.get(CMD_EXTENSION.len()..).unwrap_or("").to_string(),
-        )),
-        s if s.starts_with(CMD_BUILTIN) => Some(InputResult::AddBuiltin(
-            s.get(CMD_BUILTIN.len()..).unwrap_or("").to_string(),
-        )),
         s if s.starts_with(CMD_MODE) => Some(InputResult::GooseMode(
             s.get(CMD_MODE.len()..).unwrap_or("").to_string(),
         )),
-        s if s == CMD_MODEL => Some(InputResult::Model(ModelCommandOptions::default())),
-        s if s.starts_with(CMD_MODEL_WITH_SPACE) => {
-            let rest = s
-                .get(CMD_MODEL_WITH_SPACE.len()..)
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            if rest.is_empty() {
-                Some(InputResult::Model(ModelCommandOptions::default()))
-            } else if let Some(after_flag) = rest.strip_prefix("--provider ") {
-                let parts: Vec<&str> = after_flag.split_whitespace().collect();
-                let provider = parts.first().map(|s| s.to_string());
-                let model = parts
-                    .get(1..)
-                    .filter(|parts| !parts.is_empty())
-                    .map(|parts| parts.join(" "));
-                Some(InputResult::Model(ModelCommandOptions { provider, model }))
-            } else if rest == "--provider" {
-                Some(InputResult::Model(ModelCommandOptions {
-                    provider: Some(String::new()),
-                    model: None,
-                }))
-            } else {
-                Some(InputResult::Model(ModelCommandOptions {
-                    provider: None,
-                    model: Some(rest),
-                }))
-            }
-        }
         s if s.starts_with(CMD_PLAN) => {
             parse_plan_command(s.get(CMD_PLAN.len()..).unwrap_or("").trim().to_string())
         }
@@ -473,13 +425,9 @@ fn help_text() -> String {
 /t - Toggle Light/Dark/Ansi theme
 /t <name> - Set theme directly (light, dark, ansi)
 /r - Toggle full tool output display (show complete tool parameters without truncation)
-/extension <command> - Add a stdio extension (format: ENV1=val1 command args...)
-/builtin <names> - Add builtin extensions by name (comma-separated)
 /prompts [--extension <name>] - List all available prompts, optionally filtered by extension
 /prompt <n> [--info] [key=value...] - Get prompt info or execute a prompt
 /mode <name> - Set the goose mode to use ({modes})
-/model [name] - Show the current model, or switch models for this session while keeping the same provider
-/model --provider <name> [model] - Switch to a different provider (optionally specifying a model)
 /plan <message_text> -  Enters 'plan' mode with optional message. Create a plan based on the current messages and asks user if they want to act on it.
                         If user acts on the plan, goose mode is set to 'auto' and returns to 'normal' goose mode.
                         To warm up goose before using '/plan', we recommend setting '/mode approve' & putting appropriate context into goose.
@@ -584,88 +532,10 @@ mod tests {
             Some(InputResult::ToggleFullToolOutput)
         ));
 
-        // Test extension command
-        if let Some(InputResult::AddExtension(cmd)) = handle_slash_command("/extension foo bar") {
-            assert_eq!(cmd, "foo bar");
-        } else {
-            panic!("Expected AddExtension");
-        }
-
-        // Test builtin command
-        if let Some(InputResult::AddBuiltin(names)) = handle_slash_command("/builtin dev,git") {
-            assert_eq!(names, "dev,git");
-        } else {
-            panic!("Expected AddBuiltin");
-        }
-
-        // Test model command
-        assert!(matches!(
-            handle_slash_command("/model"),
-            Some(InputResult::Model(ModelCommandOptions {
-                provider: None,
-                model: None
-            }))
-        ));
-        assert!(matches!(
-            handle_slash_command("/model   "),
-            Some(InputResult::Model(ModelCommandOptions {
-                provider: None,
-                model: None
-            }))
-        ));
-        if let Some(InputResult::Model(ModelCommandOptions { provider, model })) =
-            handle_slash_command("/model gpt-4.1")
-        {
-            assert_eq!(model.as_deref(), Some("gpt-4.1"));
-            assert!(provider.is_none());
-        } else {
-            panic!("Expected Model");
-        }
-
-        if let Some(InputResult::Model(ModelCommandOptions { provider, model })) =
-            handle_slash_command("/model --provider anthropic")
-        {
-            assert_eq!(provider.as_deref(), Some("anthropic"));
-            assert!(model.is_none());
-        } else {
-            panic!("Expected Model with provider");
-        }
-
-        if let Some(InputResult::Model(ModelCommandOptions { provider, model })) =
-            handle_slash_command("/model --provider anthropic claude-sonnet-4")
-        {
-            assert_eq!(provider.as_deref(), Some("anthropic"));
-            assert_eq!(model.as_deref(), Some("claude-sonnet-4"));
-        } else {
-            panic!("Expected Model with provider and model");
-        }
-
-        if let Some(InputResult::Model(ModelCommandOptions { provider, model })) =
-            handle_slash_command("/model --provider")
-        {
-            assert_eq!(provider.as_deref(), Some(""));
-            assert!(model.is_none());
-        } else {
-            panic!("Expected Model with empty provider");
-        }
-
-        if let Some(InputResult::Model(ModelCommandOptions { provider, model })) =
-            handle_slash_command("/model --provider ")
-        {
-            assert_eq!(provider.as_deref(), Some(""));
-            assert!(model.is_none());
-        } else {
-            panic!("Expected Model with empty provider (trailing space)");
-        }
-
-        if let Some(InputResult::Model(ModelCommandOptions { provider, model })) =
-            handle_slash_command("/model --provider   anthropic    claude-sonnet-4")
-        {
-            assert_eq!(provider.as_deref(), Some("anthropic"));
-            assert_eq!(model.as_deref(), Some("claude-sonnet-4"));
-        } else {
-            panic!("Expected Model with extra whitespace handled");
-        }
+        assert!(handle_slash_command("/extension foo bar").is_none());
+        assert!(handle_slash_command("/builtin dev,git").is_none());
+        assert!(handle_slash_command("/model").is_none());
+        assert!(handle_slash_command("/model --provider anthropic").is_none());
 
         // Test unknown commands
         assert!(handle_slash_command("/unknown").is_none());
@@ -741,20 +611,8 @@ mod tests {
     // Test whitespace handling
     #[test]
     fn test_whitespace_handling() {
-        // Leading/trailing whitespace in extension command
-        if let Some(InputResult::AddExtension(cmd)) = handle_slash_command("  /extension foo bar  ")
-        {
-            assert_eq!(cmd, "foo bar");
-        } else {
-            panic!("Expected AddExtension");
-        }
-
-        // Leading/trailing whitespace in builtin command
-        if let Some(InputResult::AddBuiltin(names)) = handle_slash_command("  /builtin dev,git  ") {
-            assert_eq!(names, "dev,git");
-        } else {
-            panic!("Expected AddBuiltin");
-        }
+        assert!(handle_slash_command("  /extension foo bar  ").is_none());
+        assert!(handle_slash_command("  /builtin dev,git  ").is_none());
     }
 
     // Test prompt with no arguments

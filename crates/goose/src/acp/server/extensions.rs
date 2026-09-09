@@ -9,6 +9,7 @@ impl GooseAcpAgent {
         &self,
         req: AddSessionExtensionRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        ensure_extension_mutation_allowed()?;
         let session_id = &req.session_id;
         let config = goose_extension_to_config_without_secrets(req.extension)?;
         let agent = self.get_session_agent(&req.session_id).await?;
@@ -23,6 +24,7 @@ impl GooseAcpAgent {
         &self,
         req: RemoveSessionExtensionRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        ensure_extension_mutation_allowed()?;
         let session_id = &req.session_id;
         let agent = self.get_session_agent(&req.session_id).await?;
         let removed = agent
@@ -63,6 +65,7 @@ impl GooseAcpAgent {
         &self,
         req: AddConfigExtensionRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        ensure_extension_mutation_allowed()?;
         let conversion = goose_extension_to_config(req.extension)?;
 
         Config::global()
@@ -80,6 +83,7 @@ impl GooseAcpAgent {
         &self,
         req: RemoveConfigExtensionRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        ensure_extension_mutation_allowed()?;
         crate::config::extensions::remove_extension(&req.config_key);
         Ok(EmptyResponse {})
     }
@@ -88,6 +92,7 @@ impl GooseAcpAgent {
         &self,
         req: SetConfigExtensionEnabledRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        ensure_extension_mutation_allowed()?;
         let updated =
             crate::config::extensions::set_extension_enabled(&req.config_key, req.enabled);
         if !updated {
@@ -117,6 +122,19 @@ impl GooseAcpAgent {
         Ok(GetSessionExtensionsResponse {
             extensions: session_configs_to_entries(extensions)?,
         })
+    }
+}
+
+fn ensure_extension_mutation_allowed() -> Result<(), agent_client_protocol::Error> {
+    #[cfg(feature = "goosemed")]
+    {
+        Err(agent_client_protocol::Error::invalid_params()
+            .data("GooseMed extensions are fixed at build time"))
+    }
+
+    #[cfg(not(feature = "goosemed"))]
+    {
+        Ok(())
     }
 }
 
@@ -363,6 +381,7 @@ fn goose_extension_to_config_without_secrets(
     Ok(conversion.config)
 }
 
+#[cfg_attr(feature = "goosemed", allow(dead_code))]
 pub(super) fn goose_extensions_to_configs(
     extensions: Vec<GooseExtension>,
 ) -> Result<Vec<ExtensionConfig>, agent_client_protocol::Error> {
@@ -408,6 +427,12 @@ mod tests {
     use crate::agents::extension::Envs;
     use agent_client_protocol::schema::v1::{McpServer, McpServerSse};
     use std::collections::HashMap;
+
+    #[cfg(feature = "goosemed")]
+    #[test]
+    fn goosemed_rejects_extension_mutation() {
+        assert!(ensure_extension_mutation_allowed().is_err());
+    }
 
     fn builtin_config(name: &str) -> ExtensionConfig {
         ExtensionConfig::Builtin {
