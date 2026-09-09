@@ -8,6 +8,7 @@ use goose::config::{Config, GooseMode};
 #[cfg(feature = "telemetry")]
 use goose::posthog::get_telemetry_choice;
 use goose::recipe::Recipe;
+#[cfg(not(feature = "goosemed"))]
 use goose::source_roots::SourceRoot;
 #[cfg(not(feature = "goosemed"))]
 use goose_mcp::mcp_server_runner::{serve, McpCommand};
@@ -1312,6 +1313,37 @@ struct ServeCommandArgs {
     roam: bool,
 }
 
+#[cfg(feature = "goosemed")]
+fn validate_goosemed_serve_args(
+    host: &str,
+    dangerously_unauthenticated: bool,
+    allowed_origins: &[String],
+    has_secret: bool,
+) -> Result<()> {
+    if host != "127.0.0.1" {
+        anyhow::bail!("GooseMed ACP must bind to 127.0.0.1");
+    }
+    if dangerously_unauthenticated {
+        anyhow::bail!("GooseMed refuses --dangerously-unauthenticated");
+    }
+    if !allowed_origins.is_empty() {
+        anyhow::bail!("GooseMed refuses additional ACP origins");
+    }
+    if !has_secret {
+        anyhow::bail!("{GOOSE_SERVER_SECRET_KEY_ENV} is required by GooseMed");
+    }
+    Ok(())
+}
+
+#[cfg(feature = "goosemed")]
+fn goosemed_project_root() -> Result<PathBuf> {
+    let root = std::env::current_dir()?.canonicalize()?;
+    if !root.is_dir() {
+        anyhow::bail!("GooseMed project root is not a directory");
+    }
+    Ok(root)
+}
+
 #[cfg(feature = "roaming")]
 type RoamShareSlot =
     std::sync::Arc<tokio::sync::RwLock<Option<std::sync::Arc<goose_roaming::RoamingNode>>>>;
@@ -1458,6 +1490,22 @@ async fn handle_serve_command(args: ServeCommandArgs) -> Result<()> {
 
     let builtins = AcpBuiltinSelection::from_requested(builtins);
 
+    let enable_scheduler = enable_scheduler && !cfg!(feature = "goosemed");
+
+    let env_secret = std::env::var(GOOSE_SERVER_SECRET_KEY_ENV)
+        .ok()
+        .map(|secret| secret.trim().to_string())
+        .filter(|secret| !secret.is_empty());
+
+    #[cfg(feature = "goosemed")]
+    validate_goosemed_serve_args(
+        &host,
+        dangerously_unauthenticated,
+        &allowed_origins,
+        env_secret.is_some(),
+    )?;
+
+    #[cfg(not(feature = "goosemed"))]
     let additional_source_roots = Config::global()
         .get_param::<String>("ADDITIONAL_AGENT_SOURCE_ROOTS")
         .ok()
@@ -1470,19 +1518,23 @@ async fn handle_serve_command(args: ServeCommandArgs) -> Result<()> {
         })
         .collect();
 
+    #[cfg(feature = "goosemed")]
+    let additional_source_roots = Vec::new();
+
+    #[cfg(feature = "goosemed")]
+    let session_cwd = Some(goosemed_project_root()?);
+    #[cfg(not(feature = "goosemed"))]
+    let session_cwd = None;
+
     let server = Arc::new(AcpServer::new(AcpServerFactoryConfig {
         builtins,
         data_dir: Paths::data_dir(),
         config_dir: Paths::config_dir(),
         goose_platform: platform.into(),
         additional_source_roots,
-        session_cwd: None,
+        session_cwd,
         enable_scheduler,
     }));
-    let env_secret = std::env::var(GOOSE_SERVER_SECRET_KEY_ENV)
-        .ok()
-        .map(|secret| secret.trim().to_string())
-        .filter(|secret| !secret.is_empty());
     let require_token = env_secret.is_some();
     if !require_token && !dangerously_unauthenticated {
         anyhow::bail!(
@@ -2762,6 +2814,22 @@ mod tests {
             }
             _ => panic!("expected serve command"),
         }
+    }
+
+    #[cfg(feature = "goosemed")]
+    #[test]
+    fn goosemed_serve_requires_loopback_auth_and_fixed_origins() {
+        assert!(validate_goosemed_serve_args("127.0.0.1", false, &[], true).is_ok());
+        assert!(validate_goosemed_serve_args("0.0.0.0", false, &[], true).is_err());
+        assert!(validate_goosemed_serve_args("127.0.0.1", true, &[], true).is_err());
+        assert!(validate_goosemed_serve_args(
+            "127.0.0.1",
+            false,
+            &["https://example.invalid".to_string()],
+            true,
+        )
+        .is_err());
+        assert!(validate_goosemed_serve_args("127.0.0.1", false, &[], false).is_err());
     }
 
     #[test]

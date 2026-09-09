@@ -10,7 +10,8 @@ impl GooseAcpAgent {
             return Err(agent_client_protocol::Error::invalid_params()
                 .data("working directory cannot be empty"));
         }
-        let path = std::path::PathBuf::from(&working_dir);
+        let requested_path = std::path::PathBuf::from(&working_dir);
+        let path = effective_session_cwd(self.session_cwd.as_deref(), &requested_path);
         validate_absolute_cwd(&path)?;
         let session_id = &req.session_id;
 

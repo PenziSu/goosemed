@@ -244,7 +244,7 @@ describe('startGooseServe', () => {
       expect(result.certFingerprint).toBe('DD:EE:FF');
       const args = await waitForFileLines(argsPath);
       expect(args).toContain('--tls');
-      expect(args).toContain('--enable-scheduler');
+      expect(args).not.toContain('--enable-scheduler');
     } finally {
       await result.cleanup();
     }

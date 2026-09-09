@@ -1,7 +1,7 @@
 {
   "project": "GooseMed",
   "branch": "security/medical-data-hardening-v1",
-  "updatedAt": "2026-09-09T08:52:17.000Z",
+  "updatedAt": "2026-09-09T09:24:33.000Z",
   "columns": [
     {
       "id": "backlog",
@@ -19,24 +19,7 @@
       "id": "in-progress",
       "title": "進行中",
       "accent": "bg-blue-600",
-      "cards": [
-        {
-          "id": "fail-closed-egress",
-          "title": "外連政策改為 fail-closed",
-          "summary": "除核准 LLM 與 MCP Endpoint 外，其餘目的地一律拒絕。",
-          "acceptance": "提示注入測試無法產生非白名單封包。",
-          "priority": "P0",
-          "updatedAt": "2026-09-08T05:32:14.000Z"
-        },
-        {
-          "id": "project-path-boundary",
-          "title": "定義專案目錄邊界",
-          "summary": "結構化檔案工具已限縮；Shell 與 Python 的主機範圍仍待作業系統沙箱。",
-          "acceptance": "測試絕對路徑、上一層路徑與 symbolic link。",
-          "priority": "P1",
-          "updatedAt": "2026-09-09T03:45:39.683Z"
-        }
-      ]
+      "cards": []
     },
     {
       "id": "verification",
@@ -49,6 +32,22 @@
       "title": "完成",
       "accent": "bg-teal-600",
       "cards": [
+        {
+          "id": "fail-closed-egress",
+          "title": "外連政策改為 fail-closed",
+          "summary": "應用流量只允許固定 LLM、固定 MCP 與本機 ACP；桌面、Provider、MCP、Shell 與背景排程均已封閉其他出口。",
+          "acceptance": "macOS curl 與混淆 Python socket 測試均被拒絕，接收端確認沒有收到封包；Windows 與 Linux 在沙箱完成前不提供 Shell。",
+          "priority": "P0",
+          "updatedAt": "2026-09-09T09:24:33.000Z"
+        },
+        {
+          "id": "project-path-boundary",
+          "title": "定義專案目錄邊界",
+          "summary": "ACP 固定使用伺服器啟動目錄；結構化工具與 macOS Shell 只能碰目前專案，未驗證平台停用 Shell。",
+          "acceptance": "絕對路徑、上一層、URL、符號連結與 Shell 讀取專案外檔案測試均已拒絕。",
+          "priority": "P1",
+          "updatedAt": "2026-09-09T09:24:33.000Z"
+        },
         {
           "id": "task-1788925051287",
           "title": "設定地端LLM",

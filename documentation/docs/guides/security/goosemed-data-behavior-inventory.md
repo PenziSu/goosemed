@@ -8,8 +8,8 @@
 | --- | --- | --- | --- | --- |
 | D01 | 將對話送往語言模型 | 提示詞、工具結果、資料摘要 | 編譯時指定的院內模型 Endpoint | 已鎖定 `openai` 相容介面與 `gpt-oss-120b`，執行期設定無法覆寫 |
 | D02 | 透過 MCP 查詢並接收資料 | 查詢參數、IRB 範圍、病患資料 | 編譯時指定的 MCP Server 與目前專案目錄 | 已鎖定唯一 Streamable HTTP MCP，忽略工作階段與設定檔傳入的其他 MCP |
-| D03 | 執行 Shell 與 Python | 命令、檔案內容、stdout、stderr | 子程序、檔案系統、網路 | macOS 已限制專案目錄並拒絕網路，Windows 待完成 |
-| D04 | 使用結構化檔案工具 | 專案內 Excel、圖片與衍生資料 | 目前專案目錄 | 已阻擋絕對路徑、上一層與符號連結跳脫 |
+| D03 | 執行 Shell 與 Python | 命令、檔案內容、stdout、stderr | 子程序、檔案系統、網路 | macOS 已限制專案目錄並拒絕全部網路；Windows 與 Linux 在原生沙箱完成前不提供 Shell |
+| D04 | 使用結構化檔案工具 | 專案內 Excel、圖片與衍生資料 | 目前專案目錄 | 已阻擋絕對路徑、上一層與符號連結跳脫；ACP 的新增、載入、複製與切換目錄均由伺服器啟動目錄覆蓋 |
 | D05 | 保存對話工作階段 | 完整對話、工作目錄、模型與工具狀態 | 本機 SQLite | 保留，需納入磁碟加密、權限與清除政策 |
 | D06 | 保存 LLM request log | 完整請求、模型設定、回應、錯誤與用量 | 原本的本機 JSONL | 已移除應用程式 logger 安裝與 JSONL 寫入 |
 | D07 | 保存 Rust trace log | 執行事件、錯誤、路徑，視 log level 可能含內容 | 原本的本機檔案與 Langfuse | 已移除檔案 subscriber 與 Langfuse layer，CLI 僅安裝丟棄事件的 subscriber |
@@ -22,9 +22,10 @@
 | D14 | 設定其他 Provider 與 OAuth | Endpoint、模型名稱、憑證與登入狀態 | 任意 Provider 與外部瀏覽器 | 已阻擋 UI、CLI、ACP 與設定檔覆寫，只建立固定 Provider |
 | D15 | 安裝或執行 extension、plugin、hook 與任意 MCP | 提示詞、工具輸入輸出與程序環境 | 子程序、stdio、HTTP 或外部服務 | 已阻擋新增、刪除與啟停介面，只載入受限 developer 工具與固定 MCP；plugin 與 hook 不載入 |
 | D16 | 使用 dictation、gateway 或模型下載 | 語音、訊息或模型請求 | 語音 Provider、Telegram、Hugging Face 等服務 | GooseMed ACP 拒絕 dictation，CLI 不提供 gateway，預設建置不含模型下載功能 |
-| D17 | 開啟外部連結或載入遠端內容 | 連結、對話內容、MCP App 與 recipe | 系統瀏覽器、Electron、GitHub 或其他網路目的地 | 桌面外部連結一律拒絕；Electron 強制直連並只允許自身與 loopback；MCP App 不接受外部網域；recipe 只從本機載入 |
+| D17 | 開啟外部連結或載入遠端內容 | 連結、對話內容、MCP App 與 recipe | 系統瀏覽器、Electron、GitHub 或其他網路目的地 | 桌面外部連結一律拒絕；Electron 強制直連並只允許自身與 loopback；MCP App 不接受外部網域；recipe 只從本機載入；ACP 只綁定 `127.0.0.1`、強制 Secret 且拒絕額外 Origin |
 | D18 | 匯出、備份或複製資料 | 對話與研究資料集 | 使用者選定檔案、剪貼簿或備份系統 | 保留人工操作，但需限制匯出路徑與部署政策 |
 | D19 | 作業系統殘留資料 | 記憶體分頁、休眠、當機傾印、備份與防毒樣本 | 作業系統管理位置 | 保留，由端點加密、備份排除與 DLP 政策控制 |
+| D20 | 背景排程自動執行 Agent | 已保存的提示、工具與研究資料 | 語言模型、MCP、檔案系統與子程序 | GooseMed 固定關閉 ACP 排程器，桌面啟動時也不再要求啟用 |
 
 ## 程式位置
 
@@ -32,7 +33,7 @@
 | --- | --- |
 | D01、D14 | `crates/goose/src/providers/`、`crates/goose/src/acp/server/providers.rs`、`ui/desktop/src/components/settings/providers/` |
 | D02、D15 | `crates/goose/src/agents/extension_manager.rs`、`crates/goose/src/agents/platform_extensions/ext_manager.rs`、`crates/goose/src/hooks/` |
-| D03、D04 | `crates/goose/src/agents/platform_extensions/developer/`、`crates/goose/src/agents/platform_extensions/workspace.rs`、`crates/goose/src/agents/platform_extensions/analyze/` |
+| D03、D04 | `crates/goose/src/agents/platform_extensions/developer/`、`crates/goose/src/agents/platform_extensions/workspace.rs`、`crates/goose/src/acp/server.rs`、`crates/goose/src/acp/server/manage_sessions.rs` |
 | D05 | `crates/goose/src/session/session_manager.rs`，實際根目錄由 `crates/goose/src/config/paths.rs` 決定 |
 | D06 | `crates/goose-cli/src/logging.rs`、`crates/goose/src/providers/utils.rs`；底層 request log 介面仍在 `crates/goose-provider-types/src/request_log.rs`，應用程式未安裝 logger |
 | D07、D12 | `crates/goose-cli/src/logging.rs`、`crates/goose/Cargo.toml`、`crates/goose/src/posthog.rs`、`crates/goose/src/otel/` |
@@ -40,10 +41,11 @@
 | D09 | `ui/desktop/src/gooseServe.ts`、`ui/desktop/src/main.ts` |
 | D10 | `ui/desktop/src/utils/localMessageStorage.ts` |
 | D11 | `crates/goose-cli/Cargo.toml`、`crates/goose/Cargo.toml`、`ui/desktop/src/main.ts` |
-| D13 | `crates/goose/src/session/nostr.rs`、`ui/desktop/src/components/sessions/SessionListView.tsx`、`ui/desktop/src/App.tsx` |
+| D13 | `crates/goose/src/session/nostr_share.rs`、`ui/desktop/src/components/sessions/SessionListView.tsx`、`ui/desktop/src/App.tsx` |
 | D16 | `crates/goose/src/acp/server/dictation.rs`、`crates/goose-cli/src/cli.rs`、`crates/goose/src/gateway/` |
-| D17 | `ui/desktop/src/utils/openExternalUrl.ts`、`ui/desktop/src/utils/egressPolicy.ts`、`ui/desktop/src/utils/csp.ts`、`crates/goose/src/acp/mcp_app_proxy.rs`、`crates/goose-cli/src/recipes/search_recipe.rs` |
+| D17 | `ui/desktop/src/utils/openExternalUrl.ts`、`ui/desktop/src/utils/egressPolicy.ts`、`ui/desktop/src/utils/csp.ts`、`crates/goose/src/acp/mcp_app_proxy.rs`、`crates/goose-cli/src/recipes/search_recipe.rs`、`crates/goose-cli/src/cli.rs` |
 | D18 | `crates/goose/src/session/export_markdown.rs`、桌面匯出與剪貼簿呼叫位置 |
+| D20 | `crates/goose-cli/src/cli.rs`、`crates/goose/src/acp/server.rs`、`ui/desktop/src/gooseServe.ts` |
 
 每次完成一項控制，必須同步更新狀態並留下可重複的負向測試。只有「請求確實失敗」還不夠，外連測試必須同時證明接收端沒有收到封包。
 

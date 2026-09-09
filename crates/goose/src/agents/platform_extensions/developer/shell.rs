@@ -29,6 +29,14 @@ pub use super::shell_output_streaming::{
 };
 use super::shell_output_streaming::{ShellOutputBatcher, SHELL_LIVE_OUTPUT_FLUSH_INTERVAL};
 
+pub(crate) fn shell_is_available_for(goosemed: bool, operating_system: &str) -> bool {
+    !goosemed || operating_system == "macos"
+}
+
+pub(crate) fn shell_is_available() -> bool {
+    shell_is_available_for(cfg!(feature = "goosemed"), std::env::consts::OS)
+}
+
 /// Check if the current process is running inside a Flatpak sandbox.
 ///
 /// When inside Flatpak, shell commands must be wrapped with `flatpak-spawn --host`
@@ -337,7 +345,7 @@ impl ShellTool {
             output_dir: tempfile::tempdir()?,
             call_index: AtomicUsize::new(0),
             #[cfg(not(windows))]
-            login_path: if use_login_shell_path {
+            login_path: if use_login_shell_path && shell_is_available() {
                 LoginPath::spawn()
             } else {
                 LoginPath::resolved(None)
@@ -392,6 +400,13 @@ impl ShellTool {
         notification_emitter: Option<ToolCallNotificationEmitter>,
         cancellation_token: CancellationToken,
     ) -> CallToolResult {
+        if !shell_is_available() {
+            return Self::error_result(
+                "GooseMed Shell is disabled on this operating system because no verified OS sandbox is available.",
+                None,
+            );
+        }
+
         if params.command.trim().is_empty() {
             return Self::error_result("Command cannot be empty.", None);
         }
@@ -707,6 +722,13 @@ fn build_shell_command(
     login_path: Option<&str>,
     session_id: Option<&str>,
 ) -> Result<tokio::process::Command, String> {
+    if !shell_is_available() {
+        return Err(
+            "GooseMed Shell is disabled on this operating system because no verified OS sandbox is available."
+                .to_string(),
+        );
+    }
+
     #[cfg(windows)]
     let mut command = {
         let shell = windows_shell();
@@ -1039,6 +1061,15 @@ fn save_full_output(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn goosemed_shell_support_policy_is_fail_closed() {
+        assert!(shell_is_available_for(true, "macos"));
+        assert!(!shell_is_available_for(true, "windows"));
+        assert!(!shell_is_available_for(true, "linux"));
+        assert!(shell_is_available_for(false, "windows"));
+        assert!(shell_is_available_for(false, "linux"));
+    }
     use rmcp::model::ContentBlock;
 
     fn extract_text(result: &CallToolResult) -> &str {

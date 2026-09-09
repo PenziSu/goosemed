@@ -335,7 +335,6 @@ export const startGooseServe = async ({
     ...(tls ? ['--tls'] : []),
     '--platform',
     'desktop',
-    '--enable-scheduler',
     '--host',
     '127.0.0.1',
     '--port',

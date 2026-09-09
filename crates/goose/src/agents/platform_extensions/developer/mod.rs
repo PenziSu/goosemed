@@ -18,7 +18,7 @@ use rmcp::model::{
 };
 use schemars::{schema_for, JsonSchema};
 use serde_json::Value;
-use shell::{shell_display_name, ShellOutput, ShellParams, ShellTool};
+use shell::{shell_display_name, shell_is_available, ShellOutput, ShellParams, ShellTool};
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 use tree::{TreeParams, TreeTool};
@@ -40,6 +40,15 @@ pub struct DeveloperClient {
 }
 
 fn developer_instructions() -> &'static str {
+    if !shell_is_available() {
+        return indoc! {"
+            Use the developer extension to work with files inside the current project directory.
+
+            Shell execution is unavailable on this operating system. Use the structured write,
+            edit, tree, and read_image tools only.
+        "};
+    }
+
     if cfg!(windows) {
         indoc! {"
             Use the developer extension to build software and operate a terminal.
@@ -106,7 +115,7 @@ impl DeveloperClient {
     }
 
     pub(crate) fn get_tools() -> Vec<Tool> {
-        vec![
+        let mut tools = vec![
             Tool::new(
                 "write".to_string(),
                 "Create or overwrite a file inside the current project directory. Paths must be relative.".to_string(),
@@ -131,32 +140,44 @@ impl DeveloperClient {
                 Some(false),
                 Some(false),
             )),
-            {
-                let shell = shell_display_name();
-                let newline_note = if shell == "cmd" {
-                    " Commands must be on a single line — cmd.exe silently truncates at the \
+        ];
+
+        if shell_is_available() {
+            tools.push(
+                {
+                    let shell = shell_display_name();
+                    let newline_note = if shell == "cmd" {
+                        " Commands must be on a single line — cmd.exe silently truncates at the \
                      first newline. Use `&` to chain (e.g. `echo a & echo b`) or set \
                      GOOSE_SHELL=powershell for multi-line support."
-                } else {
-                    ""
-                };
-                let description = format!(
-                    "Execute a shell command in the current dir. Commands run under `{shell}` \
+                    } else {
+                        ""
+                    };
+                    let description = format!(
+                        "Execute a shell command in the current dir. Commands run under `{shell}` \
                      (set GOOSE_SHELL to override) - write command strings in that shell's \
                      syntax.{newline_note} Returns an object with stdout and stderr as separate \
                      fields. The output of each stream is limited to up to 2000 lines, and \
                      longer outputs will be saved to a temporary file.",
-                );
-                Tool::new("shell".to_string(), description, Self::schema::<ShellParams>())
-            }
-            .with_output_schema::<ShellOutput>()
-            .annotate(ToolAnnotations::from_raw(
-                Some("Shell".to_string()),
-                Some(false),
-                Some(true),
-                Some(false),
-                Some(true),
-            )),
+                    );
+                    Tool::new(
+                        "shell".to_string(),
+                        description,
+                        Self::schema::<ShellParams>(),
+                    )
+                }
+                .with_output_schema::<ShellOutput>()
+                .annotate(ToolAnnotations::from_raw(
+                    Some("Shell".to_string()),
+                    Some(false),
+                    Some(true),
+                    Some(false),
+                    Some(true),
+                )),
+            );
+        }
+
+        tools.extend([
             Tool::new(
                 "tree".to_string(),
                 "List a directory tree inside the current project directory. Paths must be relative.".to_string(),
@@ -181,7 +202,9 @@ impl DeveloperClient {
                 Some(true),
                 Some(false),
             )),
-        ]
+        ]);
+
+        tools
     }
 }
 
@@ -276,7 +299,12 @@ mod tests {
             .map(|t| t.name.to_string())
             .collect();
 
-        assert_eq!(names, vec!["write", "edit", "shell", "tree", "read_image"]);
+        let expected = if shell_is_available() {
+            vec!["write", "edit", "shell", "tree", "read_image"]
+        } else {
+            vec!["write", "edit", "tree", "read_image"]
+        };
+        assert_eq!(names, expected);
     }
 
     #[test]

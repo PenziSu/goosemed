@@ -2733,8 +2733,15 @@ impl agent_client_protocol::ConnectTo<Client> for GooseAgentConnection {
 pub async fn run(builtins: Vec<String>, enable_scheduler: bool) -> Result<()> {
     info!("listening on stdio");
 
+    let enable_scheduler = enable_scheduler && !cfg!(feature = "goosemed");
+
     let outgoing = tokio::io::stdout().compat_write();
     let incoming = tokio::io::stdin().compat();
+
+    #[cfg(feature = "goosemed")]
+    let session_cwd = Some(std::env::current_dir()?.canonicalize()?);
+    #[cfg(not(feature = "goosemed"))]
+    let session_cwd = None;
 
     let server = crate::acp::server_factory::AcpServer::new(
         crate::acp::server_factory::AcpServerFactoryConfig {
@@ -2743,7 +2750,7 @@ pub async fn run(builtins: Vec<String>, enable_scheduler: bool) -> Result<()> {
             config_dir: Paths::config_dir(),
             goose_platform: GoosePlatform::GooseCli,
             additional_source_roots: Vec::new(),
-            session_cwd: None,
+            session_cwd,
             enable_scheduler,
         },
     );
