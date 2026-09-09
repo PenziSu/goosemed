@@ -31,10 +31,15 @@ struct GuestHtmlEntry {
 #[derive(Deserialize)]
 struct ProxyQuery {
     secret: String,
+    #[cfg(not(feature = "goosemed"))]
     connect_domains: Option<String>,
+    #[cfg(not(feature = "goosemed"))]
     resource_domains: Option<String>,
+    #[cfg(not(feature = "goosemed"))]
     frame_domains: Option<String>,
+    #[cfg(not(feature = "goosemed"))]
     base_uri_domains: Option<String>,
+    #[cfg(not(feature = "goosemed"))]
     script_domains: Option<String>,
 }
 
@@ -69,6 +74,7 @@ struct GuestState {
     guest_store: GuestHtmlStore,
 }
 
+#[cfg(any(not(feature = "goosemed"), test))]
 fn normalize_csp_source(source: &str) -> Option<String> {
     let source = source.trim();
     if source.is_empty()
@@ -100,6 +106,7 @@ fn normalize_csp_source(source: &str) -> Option<String> {
     None
 }
 
+#[cfg(any(not(feature = "goosemed"), test))]
 fn is_valid_csp_host_source(source: &str) -> bool {
     if source.is_empty() || source == "*" || source.contains('@') {
         return false;
@@ -128,6 +135,7 @@ fn is_valid_csp_host_source(source: &str) -> bool {
             .all(|label| is_valid_dns_label(label) && label != "*")
 }
 
+#[cfg(any(not(feature = "goosemed"), test))]
 fn split_host_and_port(source: &str) -> (&str, Option<&str>) {
     if let Some(remainder) = source.strip_prefix('[') {
         if let Some((host, tail)) = remainder.split_once(']') {
@@ -142,6 +150,7 @@ fn split_host_and_port(source: &str) -> (&str, Option<&str>) {
     }
 }
 
+#[cfg(any(not(feature = "goosemed"), test))]
 fn is_valid_dns_label(label: &str) -> bool {
     !label.is_empty()
         && !label.starts_with('-')
@@ -153,6 +162,7 @@ fn peer_addr_is_loopback(peer_addr: &SocketAddr) -> bool {
     peer_addr.ip().is_loopback()
 }
 
+#[cfg(any(not(feature = "goosemed"), test))]
 fn parse_domains(domains: Option<&String>) -> Vec<String> {
     domains
         .map(|domains| {
@@ -222,6 +232,26 @@ fn build_outer_csp(
     )
 }
 
+fn build_requested_csp(params: &ProxyQuery, guest_origin: &str) -> String {
+    #[cfg(feature = "goosemed")]
+    {
+        let _ = params;
+        build_outer_csp(&[], &[], &[], &[], &[], guest_origin)
+    }
+
+    #[cfg(not(feature = "goosemed"))]
+    {
+        build_outer_csp(
+            &parse_domains(params.connect_domains.as_ref()),
+            &parse_domains(params.resource_domains.as_ref()),
+            &parse_domains(params.frame_domains.as_ref()),
+            &parse_domains(params.base_uri_domains.as_ref()),
+            &parse_domains(params.script_domains.as_ref()),
+            guest_origin,
+        )
+    }
+}
+
 async fn mcp_app_proxy(
     State(state): State<AppState>,
     ConnectInfo(peer_addr): ConnectInfo<SocketAddr>,
@@ -240,14 +270,7 @@ async fn mcp_app_proxy(
 
     let html = MCP_APP_PROXY_HTML.replace(
         "{{OUTER_CSP}}",
-        &build_outer_csp(
-            &parse_domains(params.connect_domains.as_ref()),
-            &parse_domains(params.resource_domains.as_ref()),
-            &parse_domains(params.frame_domains.as_ref()),
-            &parse_domains(params.base_uri_domains.as_ref()),
-            &parse_domains(params.script_domains.as_ref()),
-            &state.guest_base_url,
-        ),
+        &build_requested_csp(&params, &state.guest_base_url),
     );
 
     (
@@ -394,6 +417,8 @@ pub(crate) fn routes(secret_key: String) -> Router {
 #[cfg(test)]
 mod tests {
     use super::{build_outer_csp, normalize_csp_source, parse_domains, peer_addr_is_loopback};
+    #[cfg(feature = "goosemed")]
+    use super::{build_requested_csp, ProxyQuery};
     use axum::{
         body::Body,
         extract::ConnectInfo,
@@ -473,6 +498,19 @@ mod tests {
         let csp = build_outer_csp(&[], &[], &[], &[], &[], "http://127.0.0.1:12345");
 
         assert!(csp.contains("form-action 'none'"));
+    }
+
+    #[cfg(feature = "goosemed")]
+    #[test]
+    fn goosemed_mcp_app_csp_has_no_external_domains() {
+        let params = ProxyQuery {
+            secret: "secret".to_string(),
+        };
+
+        let csp = build_requested_csp(&params, "http://127.0.0.1:12345");
+
+        assert!(!csp.contains("attacker.example"));
+        assert!(csp.contains("connect-src 'self'"));
     }
 
     #[tokio::test]

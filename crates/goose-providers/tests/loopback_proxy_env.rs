@@ -35,3 +35,31 @@ async fn loopback_transport_does_not_use_environment_proxy() {
             .is_err()
     );
 }
+
+#[tokio::test]
+async fn direct_same_origin_transport_does_not_use_environment_proxy() {
+    let proxy = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let proxy_uri = format!("http://{}", proxy.local_addr().unwrap());
+    let _guard = env_lock::lock_env([
+        ("HTTP_PROXY", Some(proxy_uri.as_str())),
+        ("http_proxy", Some(proxy_uri.as_str())),
+        ("NO_PROXY", Some("")),
+        ("no_proxy", Some("")),
+    ]);
+    let client = ApiClient::with_timeout_and_tls(
+        "http://goosemed-endpoint.invalid".to_string(),
+        AuthMethod::BearerToken("secret".to_string()),
+        Duration::from_millis(200),
+        None,
+    )
+    .unwrap()
+    .with_direct_same_origin_transport()
+    .unwrap();
+
+    let _ = tokio::time::timeout(Duration::from_secs(2), client.response_get("models")).await;
+    assert!(
+        tokio::time::timeout(Duration::from_millis(100), proxy.accept())
+            .await
+            .is_err()
+    );
+}

@@ -19,6 +19,7 @@ const POSTHOG_CAPTURE_URL: &str = "https://us.i.posthog.com/capture/";
 /// Config key for telemetry opt-out preference
 pub const TELEMETRY_ENABLED_KEY: &str = "GOOSE_TELEMETRY_ENABLED";
 
+#[cfg(not(feature = "goosemed"))]
 static TELEMETRY_DISABLED_BY_ENV: Lazy<AtomicBool> = Lazy::new(|| {
     std::env::var("GOOSE_TELEMETRY_OFF")
         .map(|v| v == "1" || v.to_lowercase() == "true")
@@ -30,6 +31,12 @@ static TELEMETRY_DISABLED_BY_ENV: Lazy<AtomicBool> = Lazy::new(|| {
 ///
 /// Returns Some(true) if telemetry is enabled, Some(false) if disabled,
 /// or None if the user hasn't made a choice yet.
+#[cfg(feature = "goosemed")]
+pub fn get_telemetry_choice() -> Option<bool> {
+    Some(false)
+}
+
+#[cfg(not(feature = "goosemed"))]
 pub fn get_telemetry_choice() -> Option<bool> {
     if TELEMETRY_DISABLED_BY_ENV.load(Ordering::Relaxed) {
         return Some(false);
@@ -47,6 +54,12 @@ pub fn get_telemetry_choice() -> Option<bool> {
 /// - User has not made a telemetry choice yet (opt-in required)
 ///
 /// Returns true only if the user has explicitly opted in.
+#[cfg(feature = "goosemed")]
+pub fn is_telemetry_enabled() -> bool {
+    false
+}
+
+#[cfg(not(feature = "goosemed"))]
 pub fn is_telemetry_enabled() -> bool {
     get_telemetry_choice().unwrap_or(false)
 }
@@ -535,6 +548,7 @@ fn sanitize_string(s: &str) -> String {
     result
 }
 
+#[cfg(not(feature = "goosemed"))]
 fn sanitize_value(value: serde_json::Value) -> serde_json::Value {
     match value {
         serde_json::Value::String(s) => serde_json::Value::String(sanitize_string(&s)),
@@ -553,6 +567,16 @@ fn sanitize_value(value: serde_json::Value) -> serde_json::Value {
 // ============================================================================
 // Generic Event API (for frontend)
 // ============================================================================
+#[cfg(feature = "goosemed")]
+pub async fn emit_event(
+    event_name: &str,
+    properties: HashMap<String, serde_json::Value>,
+) -> Result<(), String> {
+    let _ = (event_name, properties);
+    Ok(())
+}
+
+#[cfg(not(feature = "goosemed"))]
 pub async fn emit_event(
     event_name: &str,
     mut properties: HashMap<String, serde_json::Value>,
@@ -601,4 +625,27 @@ pub async fn emit_event(
         .collect();
 
     posthog_capture(event_name, &installation.installation_id, sanitized).await
+}
+
+#[cfg(all(test, feature = "goosemed"))]
+mod goosemed_tests {
+    use super::*;
+
+    #[test]
+    fn telemetry_cannot_be_enabled() {
+        let _guard = env_lock::lock_env([
+            ("GOOSE_TELEMETRY_OFF", Some("false")),
+            ("GOOSE_TELEMETRY_ENABLED", Some("true")),
+        ]);
+
+        assert_eq!(get_telemetry_choice(), Some(false));
+        assert!(!is_telemetry_enabled());
+    }
+
+    #[tokio::test]
+    async fn onboarding_events_are_noops() {
+        assert!(emit_event("onboarding_started", HashMap::new())
+            .await
+            .is_ok());
+    }
 }

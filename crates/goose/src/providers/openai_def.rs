@@ -207,7 +207,7 @@ async fn goosemed_from_env(
         std::time::Duration::from_secs(DEFAULT_PROVIDER_TIMEOUT_SECS),
         tls_config,
     )?
-    .with_same_origin_redirects()?
+    .with_direct_same_origin_transport()?
     .with_request_builder(crate::session_context::session_id_request_builder());
 
     Ok(OpenAiProviderBuilder::new(api_client)

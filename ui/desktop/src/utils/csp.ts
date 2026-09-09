@@ -10,9 +10,14 @@ const DEFAULT_CONNECT_SOURCES = [
   'https://localhost:*',
   'ws://localhost:*',
   'wss://localhost:*',
-  'https://api.github.com',
-  'https://github.com',
-  'https://objects.githubusercontent.com',
+];
+
+const LOOPBACK_FRAME_SOURCES = [
+  "'self'",
+  'http://127.0.0.1:*',
+  'https://127.0.0.1:*',
+  'http://localhost:*',
+  'https://localhost:*',
 ];
 
 export function buildConnectSrc(externalBackend?: ExternalBackendConfig): string {
@@ -66,12 +71,12 @@ export function buildCSP(externalBackend?: ExternalBackendConfig): string {
     "default-src 'self';" +
     "style-src 'self' 'unsafe-inline';" +
     "script-src 'self' 'unsafe-inline';" +
-    "img-src 'self' data: https:;" +
+    "img-src 'self' data: blob:;" +
     `connect-src ${connectSrc};` +
     "object-src 'none';" +
-    "frame-src 'self' https: http:;" +
-    "font-src 'self' data: https:;" +
-    "media-src 'self' mediastream:;" +
+    `frame-src ${LOOPBACK_FRAME_SOURCES.join(' ')};` +
+    "font-src 'self' data:;" +
+    "media-src 'self' data: blob: mediastream:;" +
     "form-action 'none';" +
     "base-uri 'self';" +
     "manifest-src 'self';" +

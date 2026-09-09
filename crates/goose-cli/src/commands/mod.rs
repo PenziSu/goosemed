@@ -1,5 +1,6 @@
 pub mod configure;
 pub mod doctor;
+#[cfg(not(feature = "goosemed"))]
 pub mod gateway;
 pub mod info;
 pub mod recipe;

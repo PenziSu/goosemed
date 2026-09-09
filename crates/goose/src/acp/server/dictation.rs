@@ -15,11 +15,25 @@ const OPENAI_TRANSCRIPTION_MODEL: &str = "whisper-1";
 const GROQ_TRANSCRIPTION_MODEL: &str = "whisper-large-v3-turbo";
 const ELEVENLABS_TRANSCRIPTION_MODEL: &str = "scribe_v1";
 
+fn ensure_dictation_allowed() -> Result<(), agent_client_protocol::Error> {
+    #[cfg(feature = "goosemed")]
+    {
+        Err(agent_client_protocol::Error::invalid_params()
+            .data("Dictation is disabled by the GooseMed egress policy"))
+    }
+
+    #[cfg(not(feature = "goosemed"))]
+    {
+        Ok(())
+    }
+}
+
 impl GooseAcpAgent {
     pub(super) async fn on_dictation_transcribe(
         &self,
         req: DictationTranscribeRequest,
     ) -> Result<DictationTranscribeResponse, agent_client_protocol::Error> {
+        ensure_dictation_allowed()?;
         use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
         let config = crate::config::Config::global();
 
@@ -97,6 +111,7 @@ impl GooseAcpAgent {
         &self,
         _req: DictationConfigRequest,
     ) -> Result<DictationConfigResponse, agent_client_protocol::Error> {
+        ensure_dictation_allowed()?;
         let config = crate::config::Config::global();
         let mut providers = std::collections::HashMap::new();
 
@@ -143,6 +158,7 @@ impl GooseAcpAgent {
         &self,
         _req: DictationModelsListRequest,
     ) -> Result<DictationModelsListResponse, agent_client_protocol::Error> {
+        ensure_dictation_allowed()?;
         #[cfg(feature = "local-inference")]
         {
             use crate::download_manager::{get_download_manager, DownloadStatus};
@@ -176,6 +192,7 @@ impl GooseAcpAgent {
         &self,
         _req: DictationModelDownloadRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        ensure_dictation_allowed()?;
         #[cfg(feature = "local-inference")]
         {
             use crate::download_manager::get_download_manager;
@@ -231,6 +248,7 @@ impl GooseAcpAgent {
         &self,
         _req: DictationModelDownloadProgressRequest,
     ) -> Result<DictationModelDownloadProgressResponse, agent_client_protocol::Error> {
+        ensure_dictation_allowed()?;
         #[cfg(feature = "local-inference")]
         {
             use crate::download_manager::get_download_manager;
@@ -261,6 +279,7 @@ impl GooseAcpAgent {
         &self,
         _req: DictationModelCancelRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        ensure_dictation_allowed()?;
         #[cfg(feature = "local-inference")]
         {
             use crate::download_manager::get_download_manager;
@@ -279,6 +298,7 @@ impl GooseAcpAgent {
         &self,
         _req: DictationModelDeleteRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        ensure_dictation_allowed()?;
         #[cfg(feature = "local-inference")]
         {
             let model = whisper::get_model(&_req.model_id).ok_or_else(|| {
@@ -299,6 +319,16 @@ impl GooseAcpAgent {
 
         #[cfg(not(feature = "local-inference"))]
         Err(agent_client_protocol::Error::invalid_params().data("Local inference not enabled"))
+    }
+}
+
+#[cfg(all(test, feature = "goosemed"))]
+mod goosemed_tests {
+    use super::*;
+
+    #[test]
+    fn dictation_is_disabled() {
+        assert!(ensure_dictation_allowed().is_err());
     }
 }
 

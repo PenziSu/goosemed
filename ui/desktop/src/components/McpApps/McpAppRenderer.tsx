@@ -159,7 +159,7 @@ function getContainerDimensions(
   return { ...widthDimension, ...heightDimension };
 }
 
-async function fetchMcpAppProxyUrl(csp: McpUiResourceCsp | null): Promise<string | null> {
+async function fetchMcpAppProxyUrl(_csp: McpUiResourceCsp | null): Promise<string | null> {
   try {
     const acpUrl = await window.electron.getAcpUrl();
     const secretKey = await window.electron.getSecretKey();
@@ -177,19 +177,6 @@ async function fetchMcpAppProxyUrl(csp: McpUiResourceCsp | null): Promise<string
     const httpBase = httpBaseFromAcpWebSocketUrl(acpUrl).replace(/\/+$/, '');
     const proxyUrl = new URL(`${httpBase}/mcp-app-proxy`);
     proxyUrl.searchParams.set('secret', secretKey);
-
-    if (csp?.connectDomains?.length) {
-      proxyUrl.searchParams.set('connect_domains', csp.connectDomains.join(','));
-    }
-    if (csp?.resourceDomains?.length) {
-      proxyUrl.searchParams.set('resource_domains', csp.resourceDomains.join(','));
-    }
-    if (csp?.frameDomains?.length) {
-      proxyUrl.searchParams.set('frame_domains', csp.frameDomains.join(','));
-    }
-    if (csp?.baseUriDomains?.length) {
-      proxyUrl.searchParams.set('base_uri_domains', csp.baseUriDomains.join(','));
-    }
 
     return proxyUrl.toString();
   } catch (error) {

@@ -1276,7 +1276,9 @@ impl GooseAcpAgent {
 
 #[cfg(test)]
 mod tests {
-    use super::{ensure_provider_mutation_allowed, mask_secret_value};
+    #[cfg(feature = "goosemed")]
+    use super::ensure_provider_mutation_allowed;
+    use super::mask_secret_value;
 
     #[cfg(feature = "goosemed")]
     #[test]

@@ -1,15 +1,27 @@
 use anyhow::Result;
+#[cfg(not(feature = "goosemed"))]
 use goose::config::Config;
 use goose::recipe::read_recipe_file_content::RecipeFile;
 
+#[cfg(not(feature = "goosemed"))]
 use super::github_recipe::{
     list_github_recipes, retrieve_recipe_from_github, RecipeInfo, RecipeSource,
     GOOSE_RECIPE_GITHUB_REPO_CONFIG_KEY,
 };
+#[cfg(feature = "goosemed")]
+use super::github_recipe::{RecipeInfo, RecipeSource};
 use goose::recipe::local_recipes::{list_local_recipes, load_local_recipe_file};
 
 pub fn load_recipe_file(recipe_name: &str) -> Result<RecipeFile> {
-    load_local_recipe_file(recipe_name).or_else(|e| {
+    let local = load_local_recipe_file(recipe_name);
+
+    #[cfg(feature = "goosemed")]
+    {
+        local
+    }
+
+    #[cfg(not(feature = "goosemed"))]
+    local.or_else(|e| {
         if let Some(recipe_repo_full_name) = configured_github_recipe_repo() {
             retrieve_recipe_from_github(recipe_name, &recipe_repo_full_name)
         } else {
@@ -18,6 +30,7 @@ pub fn load_recipe_file(recipe_name: &str) -> Result<RecipeFile> {
     })
 }
 
+#[cfg(not(feature = "goosemed"))]
 fn configured_github_recipe_repo() -> Option<String> {
     let config = Config::global();
     match config.get_param(GOOSE_RECIPE_GITHUB_REPO_CONFIG_KEY) {
@@ -49,7 +62,7 @@ pub fn list_available_recipes() -> Result<Vec<RecipeInfo>> {
         }));
     }
 
-    // Search GitHub recipes if configured
+    #[cfg(not(feature = "goosemed"))]
     if let Some(repo) = configured_github_recipe_repo() {
         if let Ok(github_recipes) = list_github_recipes(&repo) {
             recipes.extend(github_recipes);

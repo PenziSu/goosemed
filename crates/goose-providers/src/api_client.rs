@@ -40,6 +40,7 @@ enum TransportPolicy {
     HttpsOnly,
     LoopbackHttp,
     SameOrigin(url::Origin),
+    DirectSameOrigin(url::Origin),
 }
 
 pub enum AuthMethod {
@@ -367,6 +368,21 @@ impl ApiClient {
                     }
                 }))
             }
+            TransportPolicy::DirectSameOrigin(origin) => {
+                let origin = origin.clone();
+                client_builder
+                    .no_proxy()
+                    .redirect(Policy::custom(move |attempt| {
+                        if attempt.previous().len() >= 10 {
+                            return attempt.error("too many redirects");
+                        }
+                        if attempt.url().origin() == origin {
+                            attempt.follow()
+                        } else {
+                            attempt.error("redirect crosses the approved direct origin")
+                        }
+                    }))
+            }
         }
     }
 
@@ -453,6 +469,15 @@ impl ApiClient {
             .map_err(|error| anyhow::anyhow!("Invalid base URL: {}", error))?
             .origin();
         self.transport_policy = TransportPolicy::SameOrigin(origin);
+        self.rebuild_client()?;
+        Ok(self)
+    }
+
+    pub fn with_direct_same_origin_transport(mut self) -> Result<Self> {
+        let origin = url::Url::parse(&self.host)
+            .map_err(|error| anyhow::anyhow!("Invalid base URL: {}", error))?
+            .origin();
+        self.transport_policy = TransportPolicy::DirectSameOrigin(origin);
         self.rebuild_client()?;
         Ok(self)
     }
@@ -869,6 +894,48 @@ mod tests {
                 "unexpected redirect error: {error:#}"
             );
         }
+    }
+
+    #[tokio::test]
+    async fn direct_same_origin_transport_does_not_send_redirected_payload_elsewhere() {
+        let redirector = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let redirector_addr = redirector.local_addr().unwrap();
+        let capture = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let capture_addr = capture.local_addr().unwrap();
+
+        tokio::spawn(async move {
+            let (mut socket, _) = redirector.accept().await.unwrap();
+            let mut request = [0u8; 4096];
+            let _ = socket.read(&mut request).await;
+            let response = format!(
+                "HTTP/1.1 307 Temporary Redirect\r\nLocation: http://{capture_addr}/capture\r\nContent-Length: 0\r\n\r\n"
+            );
+            socket.write_all(response.as_bytes()).await.unwrap();
+        });
+
+        let client = ApiClient::new_with_tls(
+            format!("http://{redirector_addr}"),
+            AuthMethod::BearerToken("secret".to_string()),
+            None,
+        )
+        .unwrap()
+        .with_direct_same_origin_transport()
+        .unwrap();
+
+        let error = client
+            .response_post("chat", &serde_json::json!({ "secret": "prompt" }))
+            .await
+            .unwrap_err();
+        assert!(
+            format!("{error:#}").contains("redirect crosses the approved direct origin"),
+            "unexpected redirect error: {error:#}"
+        );
+        assert!(
+            tokio::time::timeout(Duration::from_millis(100), capture.accept())
+                .await
+                .is_err(),
+            "redirect target must not receive the request body"
+        );
     }
 
     #[tokio::test]

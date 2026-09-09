@@ -73,23 +73,31 @@ impl SecurityManager {
     }
 
     fn is_ml_scanning_enabled(&self) -> bool {
-        let config = Config::global();
-
-        let prompt_enabled = config
-            .get_param::<bool>("SECURITY_PROMPT_CLASSIFIER_ENABLED")
-            .unwrap_or(false);
-
-        let command_enabled = if let Some(overridden) =
-            get_override("SECURITY_COMMAND_CLASSIFIER_ENABLED_OVERRIDE")
+        #[cfg(feature = "goosemed")]
         {
-            overridden
-        } else {
-            config
-                .get_param::<bool>("SECURITY_COMMAND_CLASSIFIER_ENABLED")
-                .unwrap_or(false)
-        };
+            false
+        }
 
-        prompt_enabled || command_enabled
+        #[cfg(not(feature = "goosemed"))]
+        {
+            let config = Config::global();
+
+            let prompt_enabled = config
+                .get_param::<bool>("SECURITY_PROMPT_CLASSIFIER_ENABLED")
+                .unwrap_or(false);
+
+            let command_enabled = if let Some(overridden) =
+                get_override("SECURITY_COMMAND_CLASSIFIER_ENABLED_OVERRIDE")
+            {
+                overridden
+            } else {
+                config
+                    .get_param::<bool>("SECURITY_COMMAND_CLASSIFIER_ENABLED")
+                    .unwrap_or(false)
+            };
+
+            prompt_enabled || command_enabled
+        }
     }
 
     pub async fn analyze_tool_requests(
@@ -261,5 +269,18 @@ impl SecurityManager {
 impl Default for SecurityManager {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(all(test, feature = "goosemed"))]
+mod goosemed_tests {
+    use super::*;
+
+    #[test]
+    fn external_ml_classifiers_stay_disabled() {
+        let _guard =
+            env_lock::lock_env([("SECURITY_COMMAND_CLASSIFIER_ENABLED_OVERRIDE", Some("true"))]);
+
+        assert!(!SecurityManager::new().is_ml_scanning_enabled());
     }
 }

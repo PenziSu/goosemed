@@ -42,18 +42,17 @@ import { isRetiredGooseChatApp } from './utils/retiredApps';
 import type { Settings, SettingKey } from './utils/settings';
 import { defaultSettings, getKeyboardShortcuts } from './utils/settings';
 import * as crypto from 'crypto';
-import * as yaml from 'yaml';
 import windowStateKeeper from 'electron-window-state';
 import './utils/gitBranchIpc';
 import './utils/recipeHash';
 import type { GooseApp } from './types/apps';
-import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
-import { WEB_PROTOCOLS } from './utils/urlSecurity';
 import { openExternalUrl } from './utils/openExternalUrl';
 import { buildCSP } from './utils/csp';
+import { isAllowedRendererNetworkUrl } from './utils/egressPolicy';
 import { resolveWorkingDir } from './utils/workingDir';
 import {
   DesktopFileAccess,
+  isAppRendererUrl,
   isAuthorizedFileAccessRequest,
   readSelectedRecipe,
 } from './desktopFileAccess';
@@ -874,81 +873,11 @@ interface ExternalBackend {
   workingDir?: string;
 }
 
-const getExternalBackendUrlFromEnv = (): string | null => {
-  if (!process.env.GOOSE_EXTERNAL_BACKEND) {
-    return null;
-  }
-
-  const configuredUrl = process.env.GOOSE_EXTERNAL_BACKEND_URL?.trim();
-  if (configuredUrl) {
-    return configuredUrl;
-  }
-
-  return `http://127.0.0.1:${process.env.GOOSE_PORT || '3000'}`;
-};
-
-const getExternalBackendFromEnv = (): ExternalBackend | null => {
-  const url = getExternalBackendUrlFromEnv();
-  if (!url) {
-    return null;
-  }
-
-  const secret = process.env.GOOSE_SERVER__SECRET_KEY;
-  if (!secret) {
-    throw new Error(
-      'GOOSE_SERVER__SECRET_KEY must be set when using GOOSE_EXTERNAL_BACKEND. ' +
-        'Set it to the same value on both the server and the desktop client.'
-    );
-  }
-
-  return {
-    source: 'env',
-    url,
-    secret,
-  };
-};
-
-const getServerSecret = (settings: Settings): string => {
-  if (settings.externalGoosed?.enabled && settings.externalGoosed.secret) {
-    return settings.externalGoosed.secret;
-  }
-  return GENERATED_SECRET;
-};
-
-const getActiveExternalBackend = (settings: Settings): ExternalBackend | null => {
-  const envBackend = getExternalBackendFromEnv();
-  if (envBackend) {
-    return {
-      ...envBackend,
-      workingDir: settings.externalGoosed?.workingDir,
-    };
-  }
-
-  if (settings.externalGoosed?.enabled && settings.externalGoosed.url) {
-    return {
-      source: 'settings',
-      url: settings.externalGoosed.url,
-      secret: getServerSecret(settings),
-      certFingerprint: settings.externalGoosed.certFingerprint,
-      workingDir: settings.externalGoosed.workingDir,
-    };
-  }
-
+const getActiveExternalBackend = (_settings: Settings): ExternalBackend | null => {
   return null;
 };
 
-const getExternalBackendForCsp = (settings: Settings) => {
-  const envUrl = getExternalBackendUrlFromEnv();
-  if (!envUrl) {
-    return settings.externalGoosed;
-  }
-
-  return {
-    ...settings.externalGoosed,
-    enabled: true,
-    url: envUrl,
-  };
-};
+const getExternalBackendForCsp = () => undefined;
 
 let appConfig = {
   GOOSE_DEFAULT_PROVIDER: defaultProvider,
@@ -1312,15 +1241,6 @@ const createChat = async (
     });
     gooseServeLeases.attachWindow(mainWindow.id, lease);
     gooseServeLease = null;
-  }
-
-  if (!app.isPackaged) {
-    installExtension(REACT_DEVELOPER_TOOLS, {
-      loadExtensionOptions: { allowFileAccess: true },
-      session: mainWindow.webContents.session,
-    })
-      .then(() => log.info('added react dev tools'))
-      .catch((err) => log.info('failed to install react dev tools:', err));
   }
 
   // Let windowStateKeeper manage the window
@@ -1888,7 +1808,6 @@ ipcMain.on('react-ready', (event) => {
   if (windowId && pendingInitialMessages.has(windowId)) {
     const initialMessage = pendingInitialMessages.get(windowId)!;
     const noAutoSubmit = pendingInitialMessageNoAutoSubmit.has(windowId);
-    log.info('Sending pending initial message to window:', initialMessage);
     window.webContents.send('set-initial-message', initialMessage, { noAutoSubmit });
     pendingInitialMessages.delete(windowId);
     pendingInitialMessageNoAutoSubmit.delete(windowId);
@@ -1947,7 +1866,6 @@ const validSettingKeys: Set<string> = new Set([
   'enableWakelock',
   'enableNotifications',
   'spellcheckEnabled',
-  'externalGoosed',
   'globalShortcut',
   'keyboardShortcuts',
   'theme',
@@ -2382,7 +2300,7 @@ ipcMain.handle('show-save-dialog', async (_event, options) => {
 });
 
 ipcMain.handle('get-allowed-extensions', async () => {
-  return await getAllowList();
+  return [];
 });
 
 const createNewWindow = async (app: App, dir?: string | null) => {
@@ -2442,6 +2360,15 @@ async function appMain() {
   const rendererSession = session.fromPartition('persist:goose');
   await configureProxy(session.defaultSession, rendererSession);
 
+  rendererSession.webRequest.onBeforeRequest(
+    { urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] },
+    (details, callback) => {
+      callback({
+        cancel: !isAllowedRendererNetworkUrl(details.url, getAppUrl()),
+      });
+    }
+  );
+
   // Ensure Windows shims are available before any MCP processes are spawned
   await ensureWinShims();
 
@@ -2457,14 +2384,18 @@ async function appMain() {
     }
   });
 
-  // Add CSP headers to all sessions, recomputed on every response so external
-  // backend settings take effect without restarting the app.
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    const currentSettings = getSettings();
+  // Apply the dynamic policy only to the Goose renderer document. MCP App
+  // responses keep the stricter CSP generated by the local proxy.
+  rendererSession.webRequest.onHeadersReceived((details, callback) => {
+    if (details.resourceType !== 'mainFrame' || !isAppRendererUrl(details.url, getAppUrl())) {
+      callback({ responseHeaders: details.responseHeaders });
+      return;
+    }
+
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': buildCSP(getExternalBackendForCsp(currentSettings)),
+        'Content-Security-Policy': buildCSP(getExternalBackendForCsp()),
       },
     });
   });
@@ -2924,31 +2855,7 @@ async function appMain() {
     }
   });
 
-  ipcMain.on('open-in-chrome', (_event, url) => {
-    try {
-      // Validate URL
-      const parsedUrl = new URL(url);
-
-      // Only allow http and https protocols for browser URLs
-      if (!WEB_PROTOCOLS.includes(parsedUrl.protocol)) {
-        console.error('Invalid URL protocol. Only HTTP and HTTPS are allowed.');
-        return;
-      }
-
-      // On macOS, use the 'open' command with Chrome
-      if (process.platform === 'darwin') {
-        spawn('open', ['-a', 'Google Chrome', url]);
-      } else if (process.platform === 'win32') {
-        // On Windows, start is built-in command of cmd.exe
-        spawn('cmd.exe', ['/c', 'start', '', 'chrome', url]);
-      } else {
-        // On Linux, use xdg-open with chrome
-        spawn('xdg-open', [url]);
-      }
-    } catch (error) {
-      console.error('Error opening URL in browser:', error);
-    }
-  });
+  ipcMain.on('open-in-chrome', () => undefined);
 
   // Handle app restart
   // Handler for getting app version
@@ -3095,36 +3002,6 @@ app.whenReady().then(async () => {
     app.quit();
   }
 });
-
-async function getAllowList(): Promise<string[]> {
-  if (!process.env.GOOSE_ALLOWLIST) {
-    return [];
-  }
-
-  const response = await fetch(process.env.GOOSE_ALLOWLIST);
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch allowed extensions: ${response.status} ${response.statusText}`
-    );
-  }
-
-  // Parse the YAML content
-  const yamlContent = await response.text();
-  const parsedYaml = yaml.parse(yamlContent);
-
-  // Extract the commands from the extensions array
-  if (parsedYaml && parsedYaml.extensions && Array.isArray(parsedYaml.extensions)) {
-    const commands = parsedYaml.extensions.map(
-      (ext: { id: string; command: string }) => ext.command
-    );
-    console.log(`Fetched ${commands.length} allowed extension commands`);
-    return commands;
-  } else {
-    console.error('Invalid YAML structure:', parsedYaml);
-    return [];
-  }
-}
 
 app.on('will-quit', async () => {
   const gooseServeLeaseCount = gooseServeLeases.activeLeaseCount();

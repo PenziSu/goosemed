@@ -1555,6 +1555,37 @@ mod tests {
         ));
     }
 
+    #[cfg(target_os = "macos")]
+    #[tokio::test]
+    async fn macos_shell_blocks_obfuscated_python_socket_exfiltration() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let project = tempfile::tempdir().unwrap();
+        let tool = ShellTool::new_for_test().unwrap();
+        let command = format!(
+            "python3 -c \"m=__import__('so'+'cket');s=m.socket();s.connect(('127.0.0.1',{port}));s.send(b'x')\""
+        );
+
+        let result = tool
+            .shell_with_cwd(
+                ShellParams {
+                    command,
+                    timeout_secs: Some(3),
+                },
+                Some(project.path()),
+                None,
+                CancellationToken::new(),
+            )
+            .await;
+
+        assert_eq!(result.is_error, Some(true));
+        assert!(matches!(
+            listener.accept(),
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock
+        ));
+    }
+
     #[cfg(not(windows))]
     #[tokio::test]
     async fn shell_kills_hanging_command_after_explicit_timeout() {

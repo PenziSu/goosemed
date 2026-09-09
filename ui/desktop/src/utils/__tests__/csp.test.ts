@@ -145,4 +145,13 @@ describe('buildCSP', () => {
     expect(csp).toContain('connect-src');
     expect(csp).toContain("object-src 'none'");
   });
+
+  it('does not permit arbitrary remote images, frames, fonts, or GitHub traffic', () => {
+    const csp = buildCSP(undefined);
+
+    expect(csp).toContain("img-src 'self' data: blob:");
+    expect(csp).toContain("font-src 'self' data:");
+    expect(csp).not.toContain('frame-src \'self\' https: http:');
+    expect(csp).not.toContain('github.com');
+  });
 });

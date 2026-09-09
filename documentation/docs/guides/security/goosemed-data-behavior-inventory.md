@@ -16,13 +16,13 @@
 | D08 | 保存 Electron 主程序 log | 桌面事件、錯誤、路徑與程序輸出 | 原本的 Electron userData 目錄與程序 console | 已移除 `electron-log`，共用 logger 與三個 Electron 入口改為不輸出 |
 | D09 | 保存啟動診斷 | 執行檔路徑、工作目錄、內部 URL、stderr 尾端 | 原本的 Electron userData startup logs | 已移除啟動診斷檔案與寫入流程 |
 | D10 | 保存輸入歷史 | 完整提示詞與拖放檔案路徑 | 程序記憶體 | 已移除 localStorage，只保留目前程序的記憶體歷史 |
-| D11 | 檢查與下載軟體更新 | 版本、平台與網路中繼資料 | 發行站與 GitHub | 已移除桌面更新器及 Rust 預設 update 功能 |
-| D12 | 傳送 Telemetry、OTEL 或追蹤資料 | 使用事件、錯誤、模型與工具欄位 | 原本的 PostHog、OTLP、Langfuse | 預設建置已排除 Telemetry、OTEL 與相關 Code Mode，Langfuse 實作已移除 |
+| D11 | 檢查與下載軟體更新 | 版本、平台與網路中繼資料 | 發行站與 GitHub | 已移除桌面更新器及 Rust 預設 update 功能，開發版亦不下載 React DevTools |
+| D12 | 傳送 Telemetry、OTEL 或追蹤資料 | 使用事件、錯誤、模型與工具欄位 | 原本的 PostHog、OTLP、Langfuse | 預設建置已排除 Telemetry、OTEL 與相關 Code Mode；即使誤開 telemetry feature，GooseMed 仍固定關閉 PostHog |
 | D13 | 分享或匯入 Nostr 工作階段 | 加密後的完整對話工作階段 | Nostr relay | Rust 預設建置已排除，桌面入口待移除 |
 | D14 | 設定其他 Provider 與 OAuth | Endpoint、模型名稱、憑證與登入狀態 | 任意 Provider 與外部瀏覽器 | 已阻擋 UI、CLI、ACP 與設定檔覆寫，只建立固定 Provider |
 | D15 | 安裝或執行 extension、plugin、hook 與任意 MCP | 提示詞、工具輸入輸出與程序環境 | 子程序、stdio、HTTP 或外部服務 | 已阻擋新增、刪除與啟停介面，只載入受限 developer 工具與固定 MCP；plugin 與 hook 不載入 |
-| D16 | 使用 dictation、gateway 或模型下載 | 語音、訊息或模型請求 | 語音 Provider、Telegram、Hugging Face 等服務 | 待移除或在醫療版停用 |
-| D17 | 開啟外部連結 | 連結內可能夾帶資料或追蹤參數 | 系統瀏覽器與 URL handler | 待限制為核准院內網址 |
+| D16 | 使用 dictation、gateway 或模型下載 | 語音、訊息或模型請求 | 語音 Provider、Telegram、Hugging Face 等服務 | GooseMed ACP 拒絕 dictation，CLI 不提供 gateway，預設建置不含模型下載功能 |
+| D17 | 開啟外部連結或載入遠端內容 | 連結、對話內容、MCP App 與 recipe | 系統瀏覽器、Electron、GitHub 或其他網路目的地 | 桌面外部連結一律拒絕；Electron 強制直連並只允許自身與 loopback；MCP App 不接受外部網域；recipe 只從本機載入 |
 | D18 | 匯出、備份或複製資料 | 對話與研究資料集 | 使用者選定檔案、剪貼簿或備份系統 | 保留人工操作，但需限制匯出路徑與部署政策 |
 | D19 | 作業系統殘留資料 | 記憶體分頁、休眠、當機傾印、備份與防毒樣本 | 作業系統管理位置 | 保留，由端點加密、備份排除與 DLP 政策控制 |
 
@@ -41,8 +41,8 @@
 | D10 | `ui/desktop/src/utils/localMessageStorage.ts` |
 | D11 | `crates/goose-cli/Cargo.toml`、`crates/goose/Cargo.toml`、`ui/desktop/src/main.ts` |
 | D13 | `crates/goose/src/session/nostr.rs`、`ui/desktop/src/components/sessions/SessionListView.tsx`、`ui/desktop/src/App.tsx` |
-| D16 | `crates/goose/src/dictation/`、`crates/goose/src/gateway/`、`crates/goose-local-inference/` |
-| D17 | `ui/desktop/src/utils/openExternalUrl.ts`、`ui/desktop/src/components/MarkdownContent.tsx` |
+| D16 | `crates/goose/src/acp/server/dictation.rs`、`crates/goose-cli/src/cli.rs`、`crates/goose/src/gateway/` |
+| D17 | `ui/desktop/src/utils/openExternalUrl.ts`、`ui/desktop/src/utils/egressPolicy.ts`、`ui/desktop/src/utils/csp.ts`、`crates/goose/src/acp/mcp_app_proxy.rs`、`crates/goose-cli/src/recipes/search_recipe.rs` |
 | D18 | `crates/goose/src/session/export_markdown.rs`、桌面匯出與剪貼簿呼叫位置 |
 
 每次完成一項控制，必須同步更新狀態並留下可重複的負向測試。只有「請求確實失敗」還不夠，外連測試必須同時證明接收端沒有收到封包。

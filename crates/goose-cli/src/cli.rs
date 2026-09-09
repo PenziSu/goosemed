@@ -224,7 +224,7 @@ pub struct InputOptions {
         long = "sub-recipe",
         value_name = "RECIPE",
         help = "Sub-recipe name or file path (can be specified multiple times)",
-        long_help = "Specify sub-recipes to include alongside the main recipe. Can be:\n  - Recipe names from GitHub (if GOOSE_RECIPE_GITHUB_REPO is configured)\n  - Local file paths to YAML files\nCan be specified multiple times to include multiple sub-recipes.",
+        long_help = "Specify local YAML sub-recipe file paths to include alongside the main recipe. Can be specified multiple times.",
         action = clap::ArgAction::Append
     )]
     pub additional_sub_recipes: Vec<String>,
@@ -612,6 +612,7 @@ enum SchedulerCommand {
     CronHelp {},
 }
 
+#[cfg(not(feature = "goosemed"))]
 #[derive(Subcommand)]
 enum GatewayCommand {
     #[command(about = "Show gateway status")]
@@ -920,6 +921,7 @@ enum Command {
     },
 
     /// Manage gateways for external platform integrations (e.g., Telegram)
+    #[cfg(not(feature = "goosemed"))]
     #[command(
         about = "Manage gateways for external platform integrations",
         visible_alias = "gw"
@@ -1264,6 +1266,7 @@ fn get_command_name(command: &Option<Command>) -> &'static str {
         Some(Command::Serve { .. }) => "serve",
         Some(Command::Session { .. }) => "session",
         Some(Command::Run { .. }) => "run",
+        #[cfg(not(feature = "goosemed"))]
         Some(Command::Gateway { .. }) => "gateway",
         Some(Command::Schedule { .. }) => "schedule",
         #[cfg(feature = "update")]
@@ -2006,6 +2009,7 @@ async fn handle_run_command(
     }
 }
 
+#[cfg(not(feature = "goosemed"))]
 async fn handle_gateway_command(command: GatewayCommand) -> Result<()> {
     use crate::commands::gateway;
 
@@ -2541,6 +2545,7 @@ pub async fn cli() -> anyhow::Result<()> {
             )
             .await
         }
+        #[cfg(not(feature = "goosemed"))]
         Some(Command::Gateway { command }) => handle_gateway_command(command).await,
         Some(Command::Schedule { command }) => handle_schedule_command(command).await,
         #[cfg(feature = "update")]
@@ -2661,6 +2666,7 @@ mod tests {
         assert!(Cli::try_parse_from(["goose", "mcp-probe", "python server.py"]).is_err());
         assert!(Cli::try_parse_from(["goose", "mcp", "memory"]).is_err());
         assert!(Cli::try_parse_from(["goose", "local-models", "search", "qwen"]).is_err());
+        assert!(Cli::try_parse_from(["goose", "gateway", "status"]).is_err());
     }
 
     #[test]
