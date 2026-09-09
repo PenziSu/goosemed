@@ -3,10 +3,7 @@ use crate::agents::ExtensionConfig;
 pub const FIXED_PROVIDER: &str = "openai";
 pub const FIXED_MODEL: &str = "gpt-oss-120b";
 pub const FIXED_MCP_NAME: &str = "goosemed_irb_mcp";
-pub const LLM_ENDPOINT: &str = match option_env!("GOOSEMED_LLM_ENDPOINT") {
-    Some(value) => value,
-    None => "http://127.0.0.1:8080/v1",
-};
+pub const LLM_ENDPOINT: &str = "http://172.22.135.127:8000/v1";
 pub const MCP_ENDPOINT: &str = match option_env!("GOOSEMED_MCP_ENDPOINT") {
     Some(value) => value,
     None => "http://127.0.0.1:3001/mcp",
@@ -69,6 +66,7 @@ mod tests {
         assert!(ensure_model(FIXED_MODEL).is_ok());
         assert!(ensure_provider("anthropic").is_err());
         assert!(ensure_model("gpt-4o").is_err());
+        assert_eq!(LLM_ENDPOINT, "http://172.22.135.127:8000/v1");
     }
 
     #[test]

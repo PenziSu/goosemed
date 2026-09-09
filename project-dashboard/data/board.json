@@ -1,67 +1,42 @@
 {
   "project": "GooseMed",
   "branch": "security/medical-data-hardening-v1",
-  "updatedAt": "2026-09-08T01:21:23.000Z",
+  "updatedAt": "2026-09-09T08:52:17.000Z",
   "columns": [
     {
       "id": "backlog",
       "title": "待盤點",
       "accent": "bg-slate-400",
-      "cards": [
-        {
-          "id": "inventory-data-behaviors",
-          "title": "盤點資料保存與傳送行為",
-          "summary": "以行為為主體，記錄觸發條件、資料內容、落地位置或目的地。",
-          "acceptance": "完成可追蹤的行為清單，禁止放入病患資料。",
-          "priority": "P1",
-          "updatedAt": "2026-09-08T00:00:00.000Z"
-        },
-        {
-          "id": "project-path-boundary",
-          "title": "定義專案目錄邊界",
-          "summary": "釐清檔案工具、Shell 與 Python 可操作的主機範圍。",
-          "acceptance": "測試絕對路徑、上一層路徑與 symbolic link。",
-          "priority": "P1",
-          "updatedAt": "2026-09-08T00:00:00.000Z"
-        }
-      ]
+      "cards": []
     },
     {
       "id": "ready",
       "title": "待開發",
       "accent": "bg-amber-500",
+      "cards": []
+    },
+    {
+      "id": "in-progress",
+      "title": "進行中",
+      "accent": "bg-blue-600",
       "cards": [
-        {
-          "id": "compile-out-egress-features",
-          "title": "移除非必要對外功能",
-          "summary": "從預設建置排除 telemetry、OTEL、Nostr 與 update。",
-          "acceptance": "功能未編入執行檔，macOS 與 Windows 建置設定一致。",
-          "priority": "P0",
-          "updatedAt": "2026-09-08T00:00:00.000Z"
-        },
         {
           "id": "fail-closed-egress",
           "title": "外連政策改為 fail-closed",
           "summary": "除核准 LLM 與 MCP Endpoint 外，其餘目的地一律拒絕。",
           "acceptance": "提示注入測試無法產生非白名單封包。",
           "priority": "P0",
-          "updatedAt": "2026-09-08T00:00:00.000Z"
+          "updatedAt": "2026-09-08T05:32:14.000Z"
         },
         {
-          "id": "fixed-provider-mcp",
-          "title": "鎖定模型與 MCP",
-          "summary": "移除切換 Provider、任意 MCP、plugin 與 hook 的入口。",
-          "acceptance": "使用者無法從 UI、設定檔或啟動參數改用其他服務。",
-          "priority": "P0",
-          "updatedAt": "2026-09-08T00:00:00.000Z"
+          "id": "project-path-boundary",
+          "title": "定義專案目錄邊界",
+          "summary": "結構化檔案工具已限縮；Shell 與 Python 的主機範圍仍待作業系統沙箱。",
+          "acceptance": "測試絕對路徑、上一層路徑與 symbolic link。",
+          "priority": "P1",
+          "updatedAt": "2026-09-09T03:45:39.683Z"
         }
       ]
-    },
-    {
-      "id": "in-progress",
-      "title": "進行中",
-      "accent": "bg-blue-600",
-      "cards": []
     },
     {
       "id": "verification",
@@ -74,6 +49,14 @@
       "title": "完成",
       "accent": "bg-teal-600",
       "cards": [
+        {
+          "id": "task-1788925051287",
+          "title": "設定地端LLM",
+          "summary": "LLM Endpoint 已鎖定為 http://172.22.135.127:8000/v1，並由 GooseMed 實機連線及完成 gpt-oss-120b 對話。",
+          "acceptance": "GooseMed provider check 顯示連線成功，實際對話回傳預期內容。",
+          "priority": "P1",
+          "updatedAt": "2026-09-09T08:52:17.000Z"
+        },
         {
           "id": "repository-setup",
           "title": "建立 Fork 與安全開發分支",
@@ -89,6 +72,38 @@
           "acceptance": "可新增卡片、拖曳狀態並寫回 board.json。",
           "priority": "P1",
           "updatedAt": "2026-09-08T01:21:23.000Z"
+        },
+        {
+          "id": "compile-out-egress-features",
+          "title": "移除非必要對外功能",
+          "summary": "預設建置已排除 telemetry、OTEL、Nostr、Code Mode 與 update，桌面更新器亦已移除。",
+          "acceptance": "功能未編入執行檔，macOS 與 Windows 建置設定一致。",
+          "priority": "P0",
+          "updatedAt": "2026-09-08T08:38:46.000Z"
+        },
+        {
+          "id": "inventory-data-behaviors",
+          "title": "盤點資料保存與傳送行為",
+          "summary": "已建立行為優先清單，追蹤資料內容、落地位置、目的地與控制狀態。",
+          "acceptance": "完成可追蹤的行為清單，禁止放入病患資料。",
+          "priority": "P1",
+          "updatedAt": "2026-09-08T08:43:42.000Z"
+        },
+        {
+          "id": "disable-content-logging",
+          "title": "停用內容型紀錄",
+          "summary": "移除 LLM request log、檔案 trace、Langfuse、Electron log、啟動診斷與提示 localStorage。",
+          "acceptance": "執行程式後不產生內容 log，提示歷史只存在記憶體。",
+          "priority": "P0",
+          "updatedAt": "2026-09-08T13:41:00.000Z"
+        },
+        {
+          "id": "fixed-provider-mcp",
+          "title": "鎖定模型與 MCP",
+          "summary": "模型固定為 gpt-oss-120b，僅保留編譯時指定的 LLM 與 IRB MCP Endpoint。",
+          "acceptance": "使用者無法從 UI、設定檔或啟動參數改用其他服務。",
+          "priority": "P0",
+          "updatedAt": "2026-09-09T03:36:22.000Z"
         }
       ]
     }
