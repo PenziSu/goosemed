@@ -1,7 +1,7 @@
 {
   "project": "GooseMed",
   "branch": "security/medical-data-hardening-v1",
-  "updatedAt": "2026-09-09T09:24:33.000Z",
+  "updatedAt": "2026-09-10T00:13:49.000Z",
   "columns": [
     {
       "id": "backlog",
@@ -33,10 +33,20 @@
       "accent": "bg-teal-600",
       "cards": [
         {
+          "id": "dashboard-card-details",
+          "title": "新增任務卡調整總結與 Detail 視窗",
+          "summary": "讓每張任務卡保存實際修改內容，並從卡面開啟詳細資訊。",
+          "acceptance": "點擊 Detail 可在彈出視窗查看標題、目標、驗收與調整總結。",
+          "details": "擴充 TaskCard 與 board.json，新增 details 調整總結欄位，並替既有九張任務卡補齊實際修改摘要。新增任務表單與 WebMCP 建立工具同步支援 details。卡片底部加入 Detail 按鈕，點擊後使用既有 Dialog 元件開啟彈出視窗，顯示優先級、更新時間、標題、目標、驗收與調整總結；空白內容有明確提示。",
+          "priority": "P1",
+          "updatedAt": "2026-09-10T00:13:49.000Z"
+        },
+        {
           "id": "fail-closed-egress",
           "title": "外連政策改為 fail-closed",
           "summary": "應用流量只允許固定 LLM、固定 MCP 與本機 ACP；桌面、Provider、MCP、Shell 與背景排程均已封閉其他出口。",
           "acceptance": "macOS curl 與混淆 Python socket 測試均被拒絕，接收端確認沒有收到封包；Windows 與 Linux 在沙箱完成前不提供 Shell。",
+          "details": "Provider 與 MCP HTTP Client 改為不使用系統 Proxy，重新導向只允許相同 Origin。Electron Renderer 僅允許本機應用與 loopback 連線，外部連結及遠端內容入口均封鎖。macOS Shell 套用 Seatbelt 拒絕全部網路，Windows 與 Linux 在原生沙箱完成前不註冊 Shell 工具。ACP 僅綁定 127.0.0.1、強制 Secret、拒絕額外 Origin，並關閉背景排程器。",
           "priority": "P0",
           "updatedAt": "2026-09-09T09:24:33.000Z"
         },
@@ -45,6 +55,7 @@
           "title": "定義專案目錄邊界",
           "summary": "ACP 固定使用伺服器啟動目錄；結構化工具與 macOS Shell 只能碰目前專案，未驗證平台停用 Shell。",
           "acceptance": "絕對路徑、上一層、URL、符號連結與 Shell 讀取專案外檔案測試均已拒絕。",
+          "details": "檔案寫入、編輯、目錄樹與圖片讀取統一檢查相對路徑及 canonical path，拒絕上一層、絕對路徑和 symbolic link 跳脫。ACP 的新增、載入、複製與工作目錄更新均以伺服器啟動目錄覆蓋客戶端傳值。macOS Shell 僅可讀寫專案目錄；其他未驗證平台直接停用 Shell。",
           "priority": "P1",
           "updatedAt": "2026-09-09T09:24:33.000Z"
         },
@@ -53,6 +64,7 @@
           "title": "設定地端LLM",
           "summary": "LLM Endpoint 已鎖定為 http://172.22.135.127:8000/v1，並由 GooseMed 實機連線及完成 gpt-oss-120b 對話。",
           "acceptance": "GooseMed provider check 顯示連線成功，實際對話回傳預期內容。",
+          "details": "將 GooseMed 的 Provider 固定為 OpenAI 相容介面，Endpoint 寫死為 http://172.22.135.127:8000/v1，模型固定為 gpt-oss-120b。移除編譯環境與執行期覆寫 Endpoint 的能力，並以 models 查詢、provider check 與實際一輪對話驗證連線。",
           "priority": "P1",
           "updatedAt": "2026-09-09T08:52:17.000Z"
         },
@@ -61,6 +73,7 @@
           "title": "建立 Fork 與安全開發分支",
           "summary": "設定 origin、官方 upstream 與獨立安全強化分支。",
           "acceptance": "工作目錄乾淨且分支來源可追溯。",
+          "details": "改用使用者 Fork 的 goosemed Git repository，保留 origin 與官方 upstream 關聯，建立 security/medical-data-hardening-v1 分支承載所有醫療資料安全修改，讓每項調整都有可追溯 commit。",
           "priority": "P0",
           "updatedAt": "2026-09-08T00:00:00.000Z"
         },
@@ -69,6 +82,7 @@
           "title": "建立本機開發看板",
           "summary": "用 Git 追蹤的地端 Kanban 管理修改與驗證進度。",
           "acceptance": "可新增卡片、拖曳狀態並寫回 board.json。",
+          "details": "建立只綁定 127.0.0.1 的 Vinext 開發看板，支援新增任務、拖曳欄位與即時寫回 data/board.json。新增 start-dashboard.command，讓 macOS 可手動啟動並自動開啟瀏覽器。Codex 每次開始 GooseMed 工作時依 AGENTS.md 重新讀取看板。",
           "priority": "P1",
           "updatedAt": "2026-09-08T01:21:23.000Z"
         },
@@ -77,6 +91,7 @@
           "title": "移除非必要對外功能",
           "summary": "預設建置已排除 telemetry、OTEL、Nostr、Code Mode 與 update，桌面更新器亦已移除。",
           "acceptance": "功能未編入執行檔，macOS 與 Windows 建置設定一致。",
+          "details": "調整 Cargo 預設 feature，排除 telemetry、OTEL、Nostr、Code Mode、模型下載與非必要 Provider。移除 Electron 自動更新器、React DevTools 下載及外部 backend 設定入口，使開發版與發行版都不會自行連往公開服務。",
           "priority": "P0",
           "updatedAt": "2026-09-08T08:38:46.000Z"
         },
@@ -85,6 +100,7 @@
           "title": "盤點資料保存與傳送行為",
           "summary": "已建立行為優先清單，追蹤資料內容、落地位置、目的地與控制狀態。",
           "acceptance": "完成可追蹤的行為清單，禁止放入病患資料。",
+          "details": "建立 GooseMed 資料保存與傳送行為盤點，逐項記錄 LLM、MCP、Shell、檔案工具、SQLite、各類 log、更新、Telemetry、外部連結、匯出與作業系統殘留資料的內容、位置、目的地及控制狀態，並連回主要實作位置。",
           "priority": "P1",
           "updatedAt": "2026-09-08T08:43:42.000Z"
         },
@@ -93,6 +109,7 @@
           "title": "停用內容型紀錄",
           "summary": "移除 LLM request log、檔案 trace、Langfuse、Electron log、啟動診斷與提示 localStorage。",
           "acceptance": "執行程式後不產生內容 log，提示歷史只存在記憶體。",
+          "details": "停止安裝 LLM request logger，移除 JSONL 請求紀錄、Rust 檔案 trace 與 Langfuse layer。Electron logger 改為不輸出，刪除啟動診斷檔案與程序輸出保存。提示輸入歷史不再寫入 localStorage，只保留當前程序記憶體。",
           "priority": "P0",
           "updatedAt": "2026-09-08T13:41:00.000Z"
         },
@@ -101,6 +118,7 @@
           "title": "鎖定模型與 MCP",
           "summary": "模型固定為 gpt-oss-120b，僅保留編譯時指定的 LLM 與 IRB MCP Endpoint。",
           "acceptance": "使用者無法從 UI、設定檔或啟動參數改用其他服務。",
+          "details": "GooseMed 只建立固定 OpenAI 相容 Provider 與單一 Streamable HTTP MCP。阻擋 UI、CLI、ACP、工作階段與設定檔新增或切換 Provider、MCP、stdio extension、plugin 及 hook，固定 MCP Client 同樣採用直連與同源重新導向政策。",
           "priority": "P0",
           "updatedAt": "2026-09-09T03:36:22.000Z"
         }

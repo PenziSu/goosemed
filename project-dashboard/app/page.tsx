@@ -5,6 +5,7 @@ import {
   Activity,
   CheckCircle2,
   Clock3,
+  FileText,
   GripVertical,
   Plus,
   Save,
@@ -33,6 +34,7 @@ type TaskCard = {
   title: string;
   summary: string;
   acceptance: string;
+  details: string;
   priority: Priority;
   updatedAt: string;
 };
@@ -91,9 +93,11 @@ export default function Home() {
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedCard, setSelectedCard] = useState<TaskCard | null>(null);
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [acceptance, setAcceptance] = useState('');
+  const [details, setDetails] = useState('');
 
   useEffect(() => {
     fetch('/api/board')
@@ -185,6 +189,7 @@ export default function Home() {
       taskTitle: string,
       taskSummary: string,
       taskAcceptance: string,
+      taskDetails: string,
       priority: Priority = 'P1',
     ) => {
       if (!taskTitle.trim()) return null;
@@ -193,6 +198,7 @@ export default function Home() {
         title: taskTitle.trim(),
         summary: taskSummary.trim(),
         acceptance: taskAcceptance.trim(),
+        details: taskDetails.trim(),
         priority,
         updatedAt: new Date().toISOString(),
       };
@@ -212,10 +218,11 @@ export default function Home() {
 
   function createTask() {
     if (!title.trim()) return;
-    void addTask(title, summary, acceptance);
+    void addTask(title, summary, acceptance, details);
     setTitle('');
     setSummary('');
     setAcceptance('');
+    setDetails('');
     setDialogOpen(false);
   }
 
@@ -287,6 +294,7 @@ export default function Home() {
               title: { type: 'string' },
               summary: { type: 'string' },
               acceptance: { type: 'string' },
+              details: { type: 'string' },
               priority: { type: 'string', enum: ['P0', 'P1', 'P2'] },
             },
             required: ['title'],
@@ -298,6 +306,7 @@ export default function Home() {
               title?: unknown;
               summary?: unknown;
               acceptance?: unknown;
+              details?: unknown;
               priority?: unknown;
             };
             if (typeof values.title !== 'string' || !values.title.trim()) {
@@ -311,6 +320,7 @@ export default function Home() {
               values.title,
               typeof values.summary === 'string' ? values.summary : '',
               typeof values.acceptance === 'string' ? values.acceptance : '',
+              typeof values.details === 'string' ? values.details : '',
               priority,
             );
             if (!cardId) throw new Error('board could not be saved');
@@ -386,6 +396,18 @@ export default function Home() {
                     id="task-acceptance"
                     value={acceptance}
                     onChange={(event) => setAcceptance(event.target.value)}
+                  />
+                </label>
+                <label
+                  htmlFor="task-details"
+                  className="grid gap-2 text-sm font-medium"
+                >
+                  調整總結
+                  <Textarea
+                    id="task-details"
+                    placeholder="可先留白，完成修改後再補上實際調整內容。"
+                    value={details}
+                    onChange={(event) => setDetails(event.target.value)}
                   />
                 </label>
               </div>
@@ -515,10 +537,24 @@ export default function Home() {
                         </p>
                       </div>
                     )}
-                    <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
-                      <Activity className="size-3.5" aria-hidden="true" />
-                      {formatTimestamp(card.updatedAt)}
-                    </p>
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <p className="flex items-center gap-1.5 text-xs text-slate-400">
+                        <Activity className="size-3.5" aria-hidden="true" />
+                        {formatTimestamp(card.updatedAt)}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        draggable={false}
+                        className="h-7 px-2 text-xs font-semibold text-teal-700 hover:bg-teal-50 hover:text-teal-800"
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={() => setSelectedCard(card)}
+                      >
+                        <FileText className="size-3.5" aria-hidden="true" />
+                        Detail
+                      </Button>
+                    </div>
                   </article>
                 ))}
 
@@ -532,6 +568,67 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <Dialog
+        open={selectedCard !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedCard(null);
+        }}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          {selectedCard && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-2 pr-8">
+                  <Badge
+                    variant="outline"
+                    className={priorityStyle(selectedCard.priority)}
+                  >
+                    {selectedCard.priority}
+                  </Badge>
+                  <span className="text-xs text-slate-400">
+                    {formatTimestamp(selectedCard.updatedAt)}
+                  </span>
+                </div>
+                <DialogTitle className="text-xl leading-7">
+                  {selectedCard.title}
+                </DialogTitle>
+                <DialogDescription>任務內容與實際修改紀錄</DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-4 py-1">
+                <section className="rounded-xl border border-slate-200 p-4">
+                  <h4 className="text-sm font-bold text-slate-500">目標</h4>
+                  <p className="mt-2 whitespace-pre-wrap text-base leading-7 text-slate-800">
+                    {selectedCard.summary || '尚未填寫目標。'}
+                  </p>
+                </section>
+
+                <section className="rounded-xl border border-slate-200 p-4">
+                  <h4 className="text-sm font-bold text-slate-500">驗收</h4>
+                  <p className="mt-2 whitespace-pre-wrap text-base leading-7 text-slate-800">
+                    {selectedCard.acceptance || '尚未填寫驗收條件。'}
+                  </p>
+                </section>
+
+                <section className="rounded-xl border border-teal-200 bg-teal-50/70 p-4">
+                  <h4 className="flex items-center gap-2 text-sm font-bold text-teal-800">
+                    <FileText className="size-4" aria-hidden="true" />
+                    調整總結
+                  </h4>
+                  <p className="mt-2 whitespace-pre-wrap text-base leading-7 text-slate-800">
+                    {selectedCard.details || '尚未填寫調整總結。'}
+                  </p>
+                </section>
+              </div>
+
+              <DialogFooter>
+                <Button onClick={() => setSelectedCard(null)}>關閉</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
