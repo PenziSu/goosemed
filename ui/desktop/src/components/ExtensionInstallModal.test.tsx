@@ -55,12 +55,14 @@ describe('ExtensionInstallModal', () => {
     it('should handle trusted extension (default behaviour, no allowlist)', async () => {
       mockElectron.getAllowedExtensions.mockResolvedValue([]);
 
-      renderWithIntl(<ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />);
+      renderWithIntl(
+        <ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />
+      );
 
       const eventHandler = getAddExtensionEventHandler();
 
       await act(async () => {
-        await eventHandler({}, 'goose://extension?cmd=npx&arg=test-extension&name=TestExt');
+        await eventHandler({}, 'goosemed://extension?cmd=npx&arg=test-extension&name=TestExt');
       });
 
       expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -72,12 +74,14 @@ describe('ExtensionInstallModal', () => {
     it('should handle trusted extension (from allowlist)', async () => {
       mockElectron.getAllowedExtensions.mockResolvedValue(['npx test-extension']);
 
-      renderWithIntl(<ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />);
+      renderWithIntl(
+        <ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />
+      );
 
       const eventHandler = getAddExtensionEventHandler();
 
       await act(async () => {
-        await eventHandler({}, 'goose://extension?cmd=npx&arg=test-extension&name=AllowedExt');
+        await eventHandler({}, 'goosemed://extension?cmd=npx&arg=test-extension&name=AllowedExt');
       });
 
       expect(screen.getByText('Confirm Extension Installation')).toBeInTheDocument();
@@ -90,14 +94,16 @@ describe('ExtensionInstallModal', () => {
       });
       mockElectron.getAllowedExtensions.mockResolvedValue(['uvx allowed-package']);
 
-      renderWithIntl(<ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />);
+      renderWithIntl(
+        <ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />
+      );
 
       const eventHandler = getAddExtensionEventHandler();
 
       await act(async () => {
         await eventHandler(
           {},
-          'goose://extension?cmd=npx&arg=untrusted-extension&name=UntrustedExt'
+          'goosemed://extension?cmd=npx&arg=untrusted-extension&name=UntrustedExt'
         );
       });
 
@@ -109,12 +115,17 @@ describe('ExtensionInstallModal', () => {
     it('should handle blocked extension', async () => {
       mockElectron.getAllowedExtensions.mockResolvedValue(['uvx allowed-package']);
 
-      renderWithIntl(<ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />);
+      renderWithIntl(
+        <ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />
+      );
 
       const eventHandler = getAddExtensionEventHandler();
 
       await act(async () => {
-        await eventHandler({}, 'goose://extension?cmd=npx&arg=blocked-extension&name=BlockedExt');
+        await eventHandler(
+          {},
+          'goosemed://extension?cmd=npx&arg=blocked-extension&name=BlockedExt'
+        );
       });
 
       expect(screen.getByText('Extension Installation Blocked')).toBeInTheDocument();
@@ -128,12 +139,14 @@ describe('ExtensionInstallModal', () => {
     it('should dismiss modal correctly', async () => {
       mockElectron.getAllowedExtensions.mockResolvedValue([]);
 
-      renderWithIntl(<ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />);
+      renderWithIntl(
+        <ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />
+      );
 
       const eventHandler = getAddExtensionEventHandler();
 
       await act(async () => {
-        await eventHandler({}, 'goose://extension?cmd=npx&arg=test&name=Test');
+        await eventHandler({}, 'goosemed://extension?cmd=npx&arg=test&name=Test');
       });
 
       expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -149,12 +162,14 @@ describe('ExtensionInstallModal', () => {
       vi.mocked(addExtensionFromDeepLink).mockResolvedValue(undefined);
       mockElectron.getAllowedExtensions.mockResolvedValue([]);
 
-      renderWithIntl(<ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />);
+      renderWithIntl(
+        <ExtensionInstallModal addExtension={mockAddExtension} setView={mockSetView} />
+      );
 
       const eventHandler = getAddExtensionEventHandler();
 
       await act(async () => {
-        await eventHandler({}, 'goose://extension?cmd=npx&arg=test&name=Test');
+        await eventHandler({}, 'goosemed://extension?cmd=npx&arg=test&name=Test');
       });
 
       await act(async () => {
@@ -162,7 +177,7 @@ describe('ExtensionInstallModal', () => {
       });
 
       expect(addExtensionFromDeepLink).toHaveBeenCalledWith(
-        'goose://extension?cmd=npx&arg=test&name=Test',
+        'goosemed://extension?cmd=npx&arg=test&name=Test',
         mockAddExtension,
         expect.any(Function)
       );

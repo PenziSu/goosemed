@@ -338,7 +338,7 @@ pub async fn handle_session_export(
 }
 
 pub async fn handle_session_import(input: String, nostr: bool) -> Result<()> {
-    let json = if nostr || input.starts_with("goose://sessions/nostr") {
+    let json = if nostr || input.starts_with("goosemed://sessions/nostr") {
         #[cfg(feature = "nostr")]
         {
             nostr_share::import_session_json_from_deeplink(&input).await?

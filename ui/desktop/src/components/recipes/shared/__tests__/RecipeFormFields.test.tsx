@@ -880,7 +880,7 @@ describe('RecipeFormFields', () => {
     });
   });
 
-  describe('GooseMed fixed runtime configuration', () => {
+  describe('GooseMED fixed runtime configuration', () => {
     it('does not render model or extension selectors', async () => {
       const user = userEvent.setup();
       renderWithIntl(<TestWrapper />);

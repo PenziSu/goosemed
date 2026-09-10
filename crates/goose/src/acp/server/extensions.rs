@@ -129,7 +129,7 @@ fn ensure_extension_mutation_allowed() -> Result<(), agent_client_protocol::Erro
     #[cfg(feature = "goosemed")]
     {
         Err(agent_client_protocol::Error::invalid_params()
-            .data("GooseMed extensions are fixed at build time"))
+            .data("GooseMED extensions are fixed at build time"))
     }
 
     #[cfg(not(feature = "goosemed"))]

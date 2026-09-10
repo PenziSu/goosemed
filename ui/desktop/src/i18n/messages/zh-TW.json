@@ -171,10 +171,10 @@
     "defaultMessage": "啟動"
   },
   "chat.notification.taskComplete.body": {
-    "defaultMessage": "按一下這裡讓 Goose 重新回到焦點。"
+    "defaultMessage": "按一下這裡讓 GooseMED 重新回到焦點。"
   },
   "chat.notification.taskComplete.title": {
-    "defaultMessage": "Goose 已完成工作。"
+    "defaultMessage": "GooseMED 已完成工作。"
   },
   "chatInput.contextWindow": {
     "defaultMessage": "上下文視窗"
@@ -225,13 +225,13 @@
     "defaultMessage": "正在等待影像儲存…"
   },
   "chatSettings.modeDescription": {
-    "defaultMessage": "選擇 Goose 用於新工作階段的預設模式。現有的工作階段會維持目前的模式。"
+    "defaultMessage": "選擇 GooseMED 用於新工作階段的預設模式。現有的工作階段會維持目前的模式。"
   },
   "chatSettings.modeTitle": {
     "defaultMessage": "預設模式"
   },
   "chatSettings.responseStylesDescription": {
-    "defaultMessage": "選擇 Goose 設定回應格式與樣式的方式"
+    "defaultMessage": "選擇 GooseMED 設定回應格式與樣式的方式"
   },
   "chatSettings.responseStylesTitle": {
     "defaultMessage": "回應樣式"
@@ -327,7 +327,7 @@
     "defaultMessage": "最大回合數"
   },
   "conversationLimitsDropdown.maxTurnsDescription": {
-    "defaultMessage": "Goose 要求使用者輸入前的最大代理回合數"
+    "defaultMessage": "GooseMED 要求使用者輸入前的最大代理回合數"
   },
   "costTracker.costUnavailable": {
     "defaultMessage": "{model} 無可用的費用資料（輸入 {inputTokens} 個權杖，輸出 {outputTokens} 個權杖）"
@@ -960,7 +960,7 @@
     "defaultMessage": "資訊要求已取消。"
   },
   "elicitationRequest.defaultMessage": {
-    "defaultMessage": "Goose 需要您提供一些資訊。"
+    "defaultMessage": "GooseMED 需要您提供一些資訊。"
   },
   "elicitationRequest.expired": {
     "defaultMessage": "此要求已過期。擴充功能需要重新詢問。"
@@ -1005,7 +1005,7 @@
     "defaultMessage": "發生錯誤。"
   },
   "errorBoundary.errorWithVersion": {
-    "defaultMessage": "Goose v{version} 發生錯誤。"
+    "defaultMessage": "GooseMED v{version} 發生錯誤。"
   },
   "errorBoundary.heading": {
     "defaultMessage": "Honk！"
@@ -1188,7 +1188,7 @@
     "defaultMessage": "在此啟用的擴充功能會作為新聊天的預設值。您也可以在聊天期間切換使用中的擴充功能。"
   },
   "extensionsView.description": {
-    "defaultMessage": "這些擴充功能使用模型內容協定 (MCP)。它們可透過三個主要元件擴充 Goose 的能力：提示、資源與工具。{searchShortcut} 即可搜尋。"
+    "defaultMessage": "這些擴充功能使用模型內容協定 (MCP)。它們可透過三個主要元件擴充 GooseMED 的能力：提示、資源與工具。{searchShortcut} 即可搜尋。"
   },
   "extensionsView.heading": {
     "defaultMessage": "擴充功能"
@@ -1212,13 +1212,13 @@
     "defaultMessage": "Certificate fingerprint requires an https URL"
   },
   "externalBackendSection.restartNote": {
-    "defaultMessage": "變更需要重新啟動 Goose 才會生效。新的聊天視窗將連線至外部伺服器。"
+    "defaultMessage": "變更需要重新啟動 GooseMED 才會生效。新的聊天視窗將連線至外部伺服器。"
   },
   "externalBackendSection.secretKey": {
     "defaultMessage": "密鑰"
   },
   "externalBackendSection.secretKeyHelp": {
-    "defaultMessage": "在 Goose 伺服器上設定的密鑰 (GOOSE_SERVER__SECRET_KEY)"
+    "defaultMessage": "在 GooseMED 伺服器上設定的密鑰 (GOOSE_SERVER__SECRET_KEY)"
   },
   "externalBackendSection.secretKeyPlaceholder": {
     "defaultMessage": "輸入伺服器的密鑰"
@@ -1227,10 +1227,10 @@
     "defaultMessage": "伺服器 URL"
   },
   "externalBackendSection.serverUrlHelp": {
-    "defaultMessage": "Enter the HTTP(S) base URL. Goose checks /status and connects to /acp under this base."
+    "defaultMessage": "Enter the HTTP(S) base URL. GooseMED checks /status and connects to /acp under this base."
   },
   "externalBackendSection.title": {
-    "defaultMessage": "Goose 伺服器"
+    "defaultMessage": "GooseMED 伺服器"
   },
   "externalBackendSection.urlBaseError": {
     "defaultMessage": "URL must be the backend base URL before /acp, without query parameters or fragments"
@@ -1263,7 +1263,7 @@
     "defaultMessage": "開發者"
   },
   "goosehintsModal.dialogDescription": {
-    "defaultMessage": "提供有關您專案的額外內容，以改善與 Goose 的溝通"
+    "defaultMessage": "提供有關您專案的額外內容，以改善與 GooseMED 的溝通"
   },
   "goosehintsModal.dialogTitle": {
     "defaultMessage": "設定專案提示 (.goosehints)"
@@ -1284,7 +1284,7 @@
     "defaultMessage": "在此處找到 .goosehints 檔案：{filePath}"
   },
   "goosehintsModal.helpText1": {
-    "defaultMessage": ".goosehints 是一個文字檔，用於提供有關您專案的額外內容，並改善與 Goose 的溝通。"
+    "defaultMessage": ".goosehints 是一個文字檔，用於提供有關您專案的額外內容，並改善與 GooseMED 的溝通。"
   },
   "goosehintsModal.helpText2": {
     "defaultMessage": "請確認擴充功能頁面中已啟用 {bold} 擴充功能。使用 .goosehints 需要此擴充功能。您需要重新啟動工作階段，.goosehints 的更新才會生效。"
@@ -1311,7 +1311,7 @@
     "defaultMessage": "設定"
   },
   "goosehintsSection.description": {
-    "defaultMessage": "設定您專案的 .goosehints 檔案，為 Goose 提供額外內容"
+    "defaultMessage": "設定您專案的 .goosehints 檔案，為 GooseMED 提供額外內容"
   },
   "goosehintsSection.title": {
     "defaultMessage": "專案提示 (.goosehints)"
@@ -1452,10 +1452,10 @@
     "defaultMessage": "取消"
   },
   "importRecipeForm.deeplinkHint": {
-    "defaultMessage": "貼上以「goose://recipe?config=」開頭的食譜深層連結"
+    "defaultMessage": "貼上以「goosemed://recipe?config=」開頭的食譜深層連結"
   },
   "importRecipeForm.deeplinkPlaceholder": {
-    "defaultMessage": "在此貼上您的 goose://recipe?config=… 深層連結"
+    "defaultMessage": "在此貼上您的 goosemed://recipe?config=… 深層連結"
   },
   "importRecipeForm.example": {
     "defaultMessage": "範例"
@@ -1596,13 +1596,13 @@
     "defaultMessage": "應用程式快速鍵"
   },
   "keyboardShortcuts.categoryApplicationDescription": {
-    "defaultMessage": "這些快速鍵在 Goose 為使用中的應用程式時生效"
+    "defaultMessage": "這些快速鍵在 GooseMED 為使用中的應用程式時生效"
   },
   "keyboardShortcuts.categoryGlobal": {
     "defaultMessage": "全域快速鍵"
   },
   "keyboardShortcuts.categoryGlobalDescription": {
-    "defaultMessage": "這些快速鍵在整個系統都可使用，即使 Goose 並非焦點視窗"
+    "defaultMessage": "這些快速鍵在整個系統都可使用，即使 GooseMED 並非焦點視窗"
   },
   "keyboardShortcuts.categorySearch": {
     "defaultMessage": "搜尋快速鍵"
@@ -1644,10 +1644,10 @@
     "defaultMessage": "尋找上一個"
   },
   "keyboardShortcuts.focusWindowDescription": {
-    "defaultMessage": "從任何位置將 Goose 視窗帶到前景"
+    "defaultMessage": "從任何位置將 GooseMED 視窗帶到前景"
   },
   "keyboardShortcuts.focusWindowLabel": {
-    "defaultMessage": "聚焦 Goose 視窗"
+    "defaultMessage": "聚焦 GooseMED 視窗"
   },
   "keyboardShortcuts.loading": {
     "defaultMessage": "載入中…"
@@ -1659,7 +1659,7 @@
     "defaultMessage": "新對話"
   },
   "keyboardShortcuts.newChatWindowDescription": {
-    "defaultMessage": "開啟新的 Goose 視窗"
+    "defaultMessage": "開啟新的 GooseMED 視窗"
   },
   "keyboardShortcuts.newChatWindowLabel": {
     "defaultMessage": "新對話視窗"
@@ -1698,7 +1698,7 @@
     "defaultMessage": "重設為預設值"
   },
   "keyboardShortcuts.restartDescription": {
-    "defaultMessage": "變更應用程式快速鍵（例如「新對話」、「設定」等）需要重新啟動 Goose 才會生效。全域快速鍵（聚焦視窗、快速啟動器）則會立即生效。"
+    "defaultMessage": "變更應用程式快速鍵（例如「新對話」、「設定」等）需要重新啟動 GooseMED 才會生效。全域快速鍵（聚焦視窗、快速啟動器）則會立即生效。"
   },
   "keyboardShortcuts.restartRequired": {
     "defaultMessage": "需要重新啟動"
@@ -2385,7 +2385,7 @@
     "defaultMessage": "伺服器可能正在啟動或暫時無法使用。"
   },
   "onboardingGuard.checkProviderErrorTitle": {
-    "defaultMessage": "無法連線到 Goose 伺服器"
+    "defaultMessage": "無法連線到 GooseMED 伺服器"
   },
   "onboardingGuard.retry": {
     "defaultMessage": "重試"
@@ -3399,7 +3399,7 @@
     "defaultMessage": "深層連結"
   },
   "scheduleModal.deepLinkPlaceholder": {
-    "defaultMessage": "在此貼上 goose://recipe 連結…"
+    "defaultMessage": "在此貼上 goosemed://recipe 連結…"
   },
   "scheduleModal.editSchedule": {
     "defaultMessage": "編輯排程"
@@ -3414,7 +3414,7 @@
     "defaultMessage": "無法讀取所選檔案。"
   },
   "scheduleModal.invalidDeepLink": {
-    "defaultMessage": "無效的深層連結。請使用 goose://recipe 連結。"
+    "defaultMessage": "無效的深層連結。請使用 goosemed://recipe 連結。"
   },
   "scheduleModal.invalidFileType": {
     "defaultMessage": "無效的檔案類型：請選擇 YAML 檔案（.yaml 或 .yml）"
@@ -3759,7 +3759,7 @@
     "defaultMessage": "聊天記錄"
   },
   "sessions.chatHistoryDesc": {
-    "defaultMessage": "檢視並搜尋您與 Goose 過去的對話。{shortcut} 即可搜尋。"
+    "defaultMessage": "檢視並搜尋您與 GooseMED 過去的對話。{shortcut} 即可搜尋。"
   },
   "sessions.close": {
     "defaultMessage": "關閉"
@@ -3795,10 +3795,10 @@
     "defaultMessage": "匯入連結"
   },
   "sessions.importNostr.description": {
-    "defaultMessage": "貼上 Goose Nostr 分享連結，以擷取、解密並匯入該工作階段。"
+    "defaultMessage": "貼上 GooseMED Nostr 分享連結，以擷取、解密並匯入該工作階段。"
   },
   "sessions.importNostr.placeholder": {
-    "defaultMessage": "goose://sessions/nostr?nevent=...&key=..."
+    "defaultMessage": "goosemed://sessions/nostr?nevent=...&key=..."
   },
   "sessions.importNostr.title": {
     "defaultMessage": "匯入 Nostr 工作階段"
@@ -4017,7 +4017,7 @@
     "defaultMessage": "開啟設定"
   },
   "settings.notifications.task.description": {
-    "defaultMessage": "當視窗在背景執行時，Goose 完成工作後發出通知"
+    "defaultMessage": "當視窗在背景執行時，GooseMED 完成工作後發出通知"
   },
   "settings.notifications.task.title": {
     "defaultMessage": "工作完成通知"
@@ -4107,7 +4107,7 @@
     "defaultMessage": "搜尋技能..."
   },
   "skillsView.skillsDescription": {
-    "defaultMessage": "檢視可擴充 Goose 功能的已安裝技能。{shortcut} 即可搜尋。"
+    "defaultMessage": "檢視可擴充 GooseMED 功能的已安裝技能。{shortcut} 即可搜尋。"
   },
   "skillsView.skillsTitle": {
     "defaultMessage": "技能"
@@ -4422,7 +4422,7 @@
     "defaultMessage": "允許 {toolName}？"
   },
   "toolConfirmation.gooseWouldLikeToCallWithName": {
-    "defaultMessage": "Goose 想要呼叫 {toolName}。要允許嗎？"
+    "defaultMessage": "GooseMED 想要呼叫 {toolName}。要允許嗎？"
   },
   "userMessage.cancel": {
     "defaultMessage": "取消"

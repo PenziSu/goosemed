@@ -240,7 +240,7 @@ where
 
 pub fn build_deeplink(nevent: &str, decryption_key: &str) -> String {
     format!(
-        "goose://sessions/nostr?nevent={}&key={}",
+        "goosemed://sessions/nostr?nevent={}&key={}",
         urlencoding::encode(nevent),
         urlencoding::encode(decryption_key)
     )
@@ -327,7 +327,7 @@ mod tests {
         .await
         .unwrap();
 
-        assert!(share.deeplink.starts_with("goose://sessions/nostr?"));
+        assert!(share.deeplink.starts_with("goosemed://sessions/nostr?"));
         assert!(share.nevent.starts_with("nevent1"));
         assert_eq!(share.relays, vec!["wss://relay.example"]);
         assert_eq!(*relays.lock().unwrap(), vec!["wss://relay.example"]);
@@ -365,7 +365,7 @@ mod tests {
 
     #[test]
     fn parses_deeplink() {
-        let parsed = parse_deeplink("goose://sessions/nostr?nevent=abc&key=def").unwrap();
+        let parsed = parse_deeplink("goosemed://sessions/nostr?nevent=abc&key=def").unwrap();
         assert_eq!(parsed.nevent, "abc");
         assert_eq!(parsed.decryption_key, "def");
     }

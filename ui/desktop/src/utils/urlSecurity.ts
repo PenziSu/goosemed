@@ -1,4 +1,5 @@
 // URL protocol constants and security utilities
+import { DEEP_LINK_SCHEME } from '../appIdentity';
 
 // Protocols for web content only (HTTP requests, browser URLs, server connections)
 export const WEB_PROTOCOLS = ['http:', 'https:'];
@@ -63,7 +64,7 @@ export const SAFE_PROTOCOLS = [
   'googlechrome:',
   'firefox:',
   'safari:',
-  'goose:',
+  `${DEEP_LINK_SCHEME}:`,
 ];
 
 export type OpenExternalUrlResult = 'opened' | 'blocked' | 'cancelled';

@@ -19,7 +19,7 @@ fn ensure_dictation_allowed() -> Result<(), agent_client_protocol::Error> {
     #[cfg(feature = "goosemed")]
     {
         Err(agent_client_protocol::Error::invalid_params()
-            .data("Dictation is disabled by the GooseMed egress policy"))
+            .data("Dictation is disabled by the GooseMED egress policy"))
     }
 
     #[cfg(not(feature = "goosemed"))]

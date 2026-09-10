@@ -27,7 +27,9 @@ fn secrets_lock_path(path: &Path) -> PathBuf {
     PathBuf::from(lock_path)
 }
 
-#[cfg(feature = "system-keyring")]
+#[cfg(all(feature = "system-keyring", feature = "goosemed"))]
+const KEYRING_SERVICE: &str = "goosemed";
+#[cfg(all(feature = "system-keyring", not(feature = "goosemed")))]
 const KEYRING_SERVICE: &str = "goose";
 #[cfg(feature = "system-keyring")]
 const KEYRING_USERNAME: &str = "secrets";
@@ -47,7 +49,7 @@ pub enum ConfigError {
     KeyringError(String),
     #[error("Failed to lock config file: {0}")]
     LockError(String),
-    #[error("GooseMed security policy rejected the configuration: {0}")]
+    #[error("GooseMED security policy rejected the configuration: {0}")]
     PolicyViolation(String),
     #[error("Secret stored using file-based fallback")]
     FallbackToFileStorage,
@@ -1367,6 +1369,13 @@ mod tests {
     use super::*;
     use serial_test::serial;
     use tempfile::{NamedTempFile, TempDir};
+
+    #[cfg(all(feature = "goosemed", feature = "system-keyring"))]
+    #[test]
+    fn goosemed_uses_distinct_keyring_service() {
+        assert_eq!(default_keyring_service(), "goosemed");
+    }
+
     #[test]
     fn test_basic_config() -> Result<(), ConfigError> {
         let config = new_test_config();

@@ -1,0 +1,7 @@
+{
+  "productName": "GooseMED",
+  "bundleId": "io.github.penzisu.goosemed",
+  "protocolName": "GooseMEDProtocol",
+  "protocolScheme": "goosemed",
+  "sessionPartition": "persist:goosemed"
+}

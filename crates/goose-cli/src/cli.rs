@@ -529,7 +529,7 @@ enum SessionCommand {
     )]
     Import {
         #[arg(
-            help = "Path to a goose session export, a Claude Code, Codex, or Pi .jsonl transcript, or a goose://sessions/nostr share link"
+            help = "Path to a goose session export, a Claude Code, Codex, or Pi .jsonl transcript, or a goosemed://sessions/nostr share link"
         )]
         input: String,
 
@@ -1321,16 +1321,16 @@ fn validate_goosemed_serve_args(
     has_secret: bool,
 ) -> Result<()> {
     if host != "127.0.0.1" {
-        anyhow::bail!("GooseMed ACP must bind to 127.0.0.1");
+        anyhow::bail!("GooseMED ACP must bind to 127.0.0.1");
     }
     if dangerously_unauthenticated {
-        anyhow::bail!("GooseMed refuses --dangerously-unauthenticated");
+        anyhow::bail!("GooseMED refuses --dangerously-unauthenticated");
     }
     if !allowed_origins.is_empty() {
-        anyhow::bail!("GooseMed refuses additional ACP origins");
+        anyhow::bail!("GooseMED refuses additional ACP origins");
     }
     if !has_secret {
-        anyhow::bail!("{GOOSE_SERVER_SECRET_KEY_ENV} is required by GooseMed");
+        anyhow::bail!("{GOOSE_SERVER_SECRET_KEY_ENV} is required by GooseMED");
     }
     Ok(())
 }
@@ -1339,7 +1339,7 @@ fn validate_goosemed_serve_args(
 fn goosemed_project_root() -> Result<PathBuf> {
     let root = std::env::current_dir()?.canonicalize()?;
     if !root.is_dir() {
-        anyhow::bail!("GooseMed project root is not a directory");
+        anyhow::bail!("GooseMED project root is not a directory");
     }
     Ok(root)
 }

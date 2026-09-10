@@ -171,10 +171,10 @@
     "defaultMessage": "Lancarkan"
   },
   "chat.notification.taskComplete.body": {
-    "defaultMessage": "Klik di sini untuk membawa Goose kembali ke fokus."
+    "defaultMessage": "Klik di sini untuk membawa GooseMED kembali ke fokus."
   },
   "chat.notification.taskComplete.title": {
-    "defaultMessage": "Goose telah menyelesaikan tugasan."
+    "defaultMessage": "GooseMED telah menyelesaikan tugasan."
   },
   "chatInput.contextWindow": {
     "defaultMessage": "Tetingkap konteks"
@@ -225,13 +225,13 @@
     "defaultMessage": "Menunggu imej disimpan..."
   },
   "chatSettings.modeDescription": {
-    "defaultMessage": "Pilih mod lalai yang Goose gunakan untuk sesi baharu. Sesi sedia ada mengekalkan mod semasanya."
+    "defaultMessage": "Pilih mod lalai yang GooseMED gunakan untuk sesi baharu. Sesi sedia ada mengekalkan mod semasanya."
   },
   "chatSettings.modeTitle": {
     "defaultMessage": "Mod Lalai"
   },
   "chatSettings.responseStylesDescription": {
-    "defaultMessage": "Pilih cara Goose memformat dan menggaya respons"
+    "defaultMessage": "Pilih cara GooseMED memformat dan menggaya respons"
   },
   "chatSettings.responseStylesTitle": {
     "defaultMessage": "Gaya Respons"
@@ -327,7 +327,7 @@
     "defaultMessage": "Pusingan Maksimum"
   },
   "conversationLimitsDropdown.maxTurnsDescription": {
-    "defaultMessage": "Pusingan ejen maksimum sebelum Goose meminta input pengguna"
+    "defaultMessage": "Pusingan ejen maksimum sebelum GooseMED meminta input pengguna"
   },
   "costTracker.costUnavailable": {
     "defaultMessage": "Data kos tidak tersedia untuk {model} ({inputTokens} token input, {outputTokens} token output)"
@@ -960,7 +960,7 @@
     "defaultMessage": "Permintaan maklumat telah dibatalkan."
   },
   "elicitationRequest.defaultMessage": {
-    "defaultMessage": "Goose memerlukan beberapa maklumat daripada anda."
+    "defaultMessage": "GooseMED memerlukan beberapa maklumat daripada anda."
   },
   "elicitationRequest.expired": {
     "defaultMessage": "Permintaan ini telah luput. Sambungan perlu bertanya semula."
@@ -1005,7 +1005,7 @@
     "defaultMessage": "Satu ralat telah berlaku."
   },
   "errorBoundary.errorWithVersion": {
-    "defaultMessage": "Satu ralat telah berlaku dalam Goose v{version}."
+    "defaultMessage": "Satu ralat telah berlaku dalam GooseMED v{version}."
   },
   "errorBoundary.heading": {
     "defaultMessage": "Honk!"
@@ -1188,7 +1188,7 @@
     "defaultMessage": "Sambungan yang didayakan di sini digunakan sebagai lalai untuk sembang baharu. Anda juga boleh menogol sambungan aktif semasa sembang."
   },
   "extensionsView.description": {
-    "defaultMessage": "Sambungan ini menggunakan Model Context Protocol (MCP). Ia boleh mengembangkan keupayaan Goose menggunakan tiga komponen utama: Prompts, Resources, dan Tools. {searchShortcut} untuk mencari."
+    "defaultMessage": "Sambungan ini menggunakan Model Context Protocol (MCP). Ia boleh mengembangkan keupayaan GooseMED menggunakan tiga komponen utama: Prompts, Resources, dan Tools. {searchShortcut} untuk mencari."
   },
   "extensionsView.heading": {
     "defaultMessage": "Sambungan"
@@ -1212,13 +1212,13 @@
     "defaultMessage": "Certificate fingerprint requires an https URL"
   },
   "externalBackendSection.restartNote": {
-    "defaultMessage": "Perubahan memerlukan memulakan semula Goose untuk berkuat kuasa. Tetingkap sembang baharu akan menyambung ke pelayan luaran."
+    "defaultMessage": "Perubahan memerlukan memulakan semula GooseMED untuk berkuat kuasa. Tetingkap sembang baharu akan menyambung ke pelayan luaran."
   },
   "externalBackendSection.secretKey": {
     "defaultMessage": "Kunci Rahsia"
   },
   "externalBackendSection.secretKeyHelp": {
-    "defaultMessage": "Kunci rahsia yang dikonfigurasikan pada pelayan Goose (GOOSE_SERVER__SECRET_KEY)"
+    "defaultMessage": "Kunci rahsia yang dikonfigurasikan pada pelayan GooseMED (GOOSE_SERVER__SECRET_KEY)"
   },
   "externalBackendSection.secretKeyPlaceholder": {
     "defaultMessage": "Masukkan kunci rahsia pelayan"
@@ -1227,10 +1227,10 @@
     "defaultMessage": "URL Pelayan"
   },
   "externalBackendSection.serverUrlHelp": {
-    "defaultMessage": "Enter the HTTP(S) base URL. Goose checks /status and connects to /acp under this base."
+    "defaultMessage": "Enter the HTTP(S) base URL. GooseMED checks /status and connects to /acp under this base."
   },
   "externalBackendSection.title": {
-    "defaultMessage": "Pelayan Goose"
+    "defaultMessage": "Pelayan GooseMED"
   },
   "externalBackendSection.urlBaseError": {
     "defaultMessage": "URL must be the backend base URL before /acp, without query parameters or fragments"
@@ -1263,7 +1263,7 @@
     "defaultMessage": "Pembangun"
   },
   "goosehintsModal.dialogDescription": {
-    "defaultMessage": "Berikan konteks tambahan tentang projek anda untuk meningkatkan komunikasi dengan Goose"
+    "defaultMessage": "Berikan konteks tambahan tentang projek anda untuk meningkatkan komunikasi dengan GooseMED"
   },
   "goosehintsModal.dialogTitle": {
     "defaultMessage": "Konfigurasikan Petunjuk Projek (.goosehints)"
@@ -1284,7 +1284,7 @@
     "defaultMessage": "Fail .goosehints dijumpai di: {filePath}"
   },
   "goosehintsModal.helpText1": {
-    "defaultMessage": ".goosehints ialah fail teks yang digunakan untuk memberikan konteks tambahan tentang projek anda dan meningkatkan komunikasi dengan Goose."
+    "defaultMessage": ".goosehints ialah fail teks yang digunakan untuk memberikan konteks tambahan tentang projek anda dan meningkatkan komunikasi dengan GooseMED."
   },
   "goosehintsModal.helpText2": {
     "defaultMessage": "Sila pastikan sambungan {bold} didayakan dalam halaman sambungan. Sambungan ini diperlukan untuk menggunakan .goosehints. Anda perlu memulakan semula sesi anda untuk kemas kini .goosehints berkuat kuasa."
@@ -1311,7 +1311,7 @@
     "defaultMessage": "Konfigurasikan"
   },
   "goosehintsSection.description": {
-    "defaultMessage": "Konfigurasikan fail .goosehints projek anda untuk memberikan konteks tambahan kepada Goose"
+    "defaultMessage": "Konfigurasikan fail .goosehints projek anda untuk memberikan konteks tambahan kepada GooseMED"
   },
   "goosehintsSection.title": {
     "defaultMessage": "Petunjuk Projek (.goosehints)"
@@ -1452,10 +1452,10 @@
     "defaultMessage": "Batal"
   },
   "importRecipeForm.deeplinkHint": {
-    "defaultMessage": "Tampal pautan dalam resipi yang bermula dengan \"goose://recipe?config=\""
+    "defaultMessage": "Tampal pautan dalam resipi yang bermula dengan \"goosemed://recipe?config=\""
   },
   "importRecipeForm.deeplinkPlaceholder": {
-    "defaultMessage": "Tampal pautan dalam goose://recipe?config=... anda di sini"
+    "defaultMessage": "Tampal pautan dalam goosemed://recipe?config=... anda di sini"
   },
   "importRecipeForm.example": {
     "defaultMessage": "contoh"
@@ -1596,13 +1596,13 @@
     "defaultMessage": "Pintasan Aplikasi"
   },
   "keyboardShortcuts.categoryApplicationDescription": {
-    "defaultMessage": "Pintasan ini berfungsi apabila Goose ialah aplikasi aktif"
+    "defaultMessage": "Pintasan ini berfungsi apabila GooseMED ialah aplikasi aktif"
   },
   "keyboardShortcuts.categoryGlobal": {
     "defaultMessage": "Pintasan Global"
   },
   "keyboardShortcuts.categoryGlobalDescription": {
-    "defaultMessage": "Pintasan ini berfungsi di seluruh sistem, walaupun Goose tidak difokuskan"
+    "defaultMessage": "Pintasan ini berfungsi di seluruh sistem, walaupun GooseMED tidak difokuskan"
   },
   "keyboardShortcuts.categorySearch": {
     "defaultMessage": "Pintasan Carian"
@@ -1644,10 +1644,10 @@
     "defaultMessage": "Cari Sebelumnya"
   },
   "keyboardShortcuts.focusWindowDescription": {
-    "defaultMessage": "Bawa tetingkap Goose ke hadapan dari mana-mana sahaja"
+    "defaultMessage": "Bawa tetingkap GooseMED ke hadapan dari mana-mana sahaja"
   },
   "keyboardShortcuts.focusWindowLabel": {
-    "defaultMessage": "Fokus Tetingkap Goose"
+    "defaultMessage": "Fokus Tetingkap GooseMED"
   },
   "keyboardShortcuts.loading": {
     "defaultMessage": "Memuatkan..."
@@ -1659,7 +1659,7 @@
     "defaultMessage": "Sembang Baharu"
   },
   "keyboardShortcuts.newChatWindowDescription": {
-    "defaultMessage": "Buka tetingkap Goose baharu"
+    "defaultMessage": "Buka tetingkap GooseMED baharu"
   },
   "keyboardShortcuts.newChatWindowLabel": {
     "defaultMessage": "Tetingkap Sembang Baharu"
@@ -1698,7 +1698,7 @@
     "defaultMessage": "Set Semula kepada Lalai"
   },
   "keyboardShortcuts.restartDescription": {
-    "defaultMessage": "Perubahan pada pintasan aplikasi (seperti Sembang Baharu, Tetapan, dll.) memerlukan Goose dimulakan semula untuk berkuat kuasa. Pintasan global (Fokus Tetingkap, Pelancar Pantas) berfungsi serta-merta."
+    "defaultMessage": "Perubahan pada pintasan aplikasi (seperti Sembang Baharu, Tetapan, dll.) memerlukan GooseMED dimulakan semula untuk berkuat kuasa. Pintasan global (Fokus Tetingkap, Pelancar Pantas) berfungsi serta-merta."
   },
   "keyboardShortcuts.restartRequired": {
     "defaultMessage": "Mula Semula Diperlukan"
@@ -2385,7 +2385,7 @@
     "defaultMessage": "Pelayan mungkin sedang dimulakan atau tidak tersedia buat sementara waktu."
   },
   "onboardingGuard.checkProviderErrorTitle": {
-    "defaultMessage": "Tidak dapat menyambung ke pelayan Goose"
+    "defaultMessage": "Tidak dapat menyambung ke pelayan GooseMED"
   },
   "onboardingGuard.retry": {
     "defaultMessage": "Cuba Semula"
@@ -3399,7 +3399,7 @@
     "defaultMessage": "Pautan dalam"
   },
   "scheduleModal.deepLinkPlaceholder": {
-    "defaultMessage": "Tampal pautan goose://recipe di sini..."
+    "defaultMessage": "Tampal pautan goosemed://recipe di sini..."
   },
   "scheduleModal.editSchedule": {
     "defaultMessage": "Edit Jadual"
@@ -3414,7 +3414,7 @@
     "defaultMessage": "Gagal membaca fail yang dipilih."
   },
   "scheduleModal.invalidDeepLink": {
-    "defaultMessage": "Pautan dalam tidak sah. Sila gunakan pautan goose://recipe."
+    "defaultMessage": "Pautan dalam tidak sah. Sila gunakan pautan goosemed://recipe."
   },
   "scheduleModal.invalidFileType": {
     "defaultMessage": "Jenis fail tidak sah: Sila pilih fail YAML (.yaml atau .yml)"
@@ -3759,7 +3759,7 @@
     "defaultMessage": "Sejarah sembang"
   },
   "sessions.chatHistoryDesc": {
-    "defaultMessage": "Lihat dan cari perbualan lepas anda dengan Goose. {shortcut} untuk mencari."
+    "defaultMessage": "Lihat dan cari perbualan lepas anda dengan GooseMED. {shortcut} untuk mencari."
   },
   "sessions.close": {
     "defaultMessage": "Tutup"
@@ -3795,10 +3795,10 @@
     "defaultMessage": "Import Pautan"
   },
   "sessions.importNostr.description": {
-    "defaultMessage": "Tampal pautan kongsi Nostr Goose untuk mengambil, menyahsulit, dan mengimport sesi."
+    "defaultMessage": "Tampal pautan kongsi Nostr GooseMED untuk mengambil, menyahsulit, dan mengimport sesi."
   },
   "sessions.importNostr.placeholder": {
-    "defaultMessage": "goose://sessions/nostr?nevent=...&key=..."
+    "defaultMessage": "goosemed://sessions/nostr?nevent=...&key=..."
   },
   "sessions.importNostr.title": {
     "defaultMessage": "Import Sesi Nostr"
@@ -4017,7 +4017,7 @@
     "defaultMessage": "Buka Tetapan"
   },
   "settings.notifications.task.description": {
-    "defaultMessage": "Beritahu apabila Goose menyelesaikan tugasan semasa tetingkap berada di latar belakang"
+    "defaultMessage": "Beritahu apabila GooseMED menyelesaikan tugasan semasa tetingkap berada di latar belakang"
   },
   "settings.notifications.task.title": {
     "defaultMessage": "Pemberitahuan penyelesaian tugasan"
@@ -4107,7 +4107,7 @@
     "defaultMessage": "Cari kemahiran..."
   },
   "skillsView.skillsDescription": {
-    "defaultMessage": "Lihat kemahiran terpasang yang meluaskan keupayaan Goose. {shortcut} untuk mencari."
+    "defaultMessage": "Lihat kemahiran terpasang yang meluaskan keupayaan GooseMED. {shortcut} untuk mencari."
   },
   "skillsView.skillsTitle": {
     "defaultMessage": "Kemahiran"
@@ -4422,7 +4422,7 @@
     "defaultMessage": "Benarkan {toolName}?"
   },
   "toolConfirmation.gooseWouldLikeToCallWithName": {
-    "defaultMessage": "Goose ingin memanggil {toolName}. Benarkan?"
+    "defaultMessage": "GooseMED ingin memanggil {toolName}. Benarkan?"
   },
   "userMessage.cancel": {
     "defaultMessage": "Batal"

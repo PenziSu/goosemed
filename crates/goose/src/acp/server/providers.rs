@@ -487,7 +487,7 @@ fn ensure_provider_mutation_allowed() -> Result<(), agent_client_protocol::Error
     #[cfg(feature = "goosemed")]
     {
         Err(agent_client_protocol::Error::invalid_params()
-            .data("GooseMed provider and model are fixed at build time"))
+            .data("GooseMED provider and model are fixed at build time"))
     }
 
     #[cfg(not(feature = "goosemed"))]

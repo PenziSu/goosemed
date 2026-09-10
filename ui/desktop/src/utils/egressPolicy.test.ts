@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isAllowedRendererNetworkUrl } from './egressPolicy';
 
-const appUrl = new URL('file:///Applications/GooseMed/index.html');
+const appUrl = new URL('file:///Applications/GooseMED/index.html');
 
 describe('renderer egress policy', () => {
   it.each([
@@ -16,11 +16,7 @@ describe('renderer egress policy', () => {
     const backend = 'https://his-gateway.hospital.example:8443/acp';
 
     expect(
-      isAllowedRendererNetworkUrl(
-        'wss://his-gateway.hospital.example:8443/acp',
-        appUrl,
-        backend
-      )
+      isAllowedRendererNetworkUrl('wss://his-gateway.hospital.example:8443/acp', appUrl, backend)
     ).toBe(true);
     expect(
       isAllowedRendererNetworkUrl(
@@ -30,11 +26,7 @@ describe('renderer egress policy', () => {
       )
     ).toBe(true);
     expect(
-      isAllowedRendererNetworkUrl(
-        'https://other.hospital.example:8443/',
-        appUrl,
-        backend
-      )
+      isAllowedRendererNetworkUrl('https://other.hospital.example:8443/', appUrl, backend)
     ).toBe(false);
   });
 

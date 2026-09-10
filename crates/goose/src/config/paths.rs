@@ -2,6 +2,11 @@ use etcetera::{choose_app_strategy, AppStrategy, AppStrategyArgs};
 use std::ffi::OsString;
 use std::path::PathBuf;
 
+#[cfg(feature = "goosemed")]
+const APP_DIRECTORY_NAME: &str = "goosemed";
+#[cfg(not(feature = "goosemed"))]
+const APP_DIRECTORY_NAME: &str = "goose";
+
 pub struct Paths;
 
 impl Paths {
@@ -22,7 +27,7 @@ impl Paths {
             let strategy = choose_app_strategy(AppStrategyArgs {
                 top_level_domain: "Block".to_string(),
                 author: "Block".to_string(),
-                app_name: "goose".to_string(),
+                app_name: APP_DIRECTORY_NAME.to_string(),
             })
             .expect("goose requires a home dir");
 

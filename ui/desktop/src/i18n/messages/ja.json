@@ -171,10 +171,10 @@
     "defaultMessage": "起動"
   },
   "chat.notification.taskComplete.body": {
-    "defaultMessage": "クリックしてGooseにフォーカスを戻します。"
+    "defaultMessage": "クリックしてGooseMEDにフォーカスを戻します。"
   },
   "chat.notification.taskComplete.title": {
-    "defaultMessage": "Gooseがタスクを完了しました。"
+    "defaultMessage": "GooseMEDがタスクを完了しました。"
   },
   "chatInput.contextWindow": {
     "defaultMessage": "コンテキストウィンドウ"
@@ -225,13 +225,13 @@
     "defaultMessage": "画像の保存を待機中..."
   },
   "chatSettings.modeDescription": {
-    "defaultMessage": "Gooseがツールや拡張機能とどのようにやり取りするかを設定します"
+    "defaultMessage": "GooseMEDがツールや拡張機能とどのようにやり取りするかを設定します"
   },
   "chatSettings.modeTitle": {
     "defaultMessage": "モード"
   },
   "chatSettings.responseStylesDescription": {
-    "defaultMessage": "Gooseの回答の形式とスタイルを選択します"
+    "defaultMessage": "GooseMEDの回答の形式とスタイルを選択します"
   },
   "chatSettings.responseStylesTitle": {
     "defaultMessage": "回答スタイル"
@@ -327,7 +327,7 @@
     "defaultMessage": "最大ターン数"
   },
   "conversationLimitsDropdown.maxTurnsDescription": {
-    "defaultMessage": "Gooseがユーザー入力を求めるまでのエージェントの最大ターン数"
+    "defaultMessage": "GooseMEDがユーザー入力を求めるまでのエージェントの最大ターン数"
   },
   "costTracker.costUnavailable": {
     "defaultMessage": "{model} のコストデータは利用できません（入力 {inputTokens} トークン、出力 {outputTokens} トークン）"
@@ -960,7 +960,7 @@
     "defaultMessage": "情報リクエストはキャンセルされました。"
   },
   "elicitationRequest.defaultMessage": {
-    "defaultMessage": "Gooseが情報を必要としています。"
+    "defaultMessage": "GooseMEDが情報を必要としています。"
   },
   "elicitationRequest.expired": {
     "defaultMessage": "このリクエストは期限切れです。拡張機能が再度確認する必要があります。"
@@ -1005,7 +1005,7 @@
     "defaultMessage": "エラーが発生しました。"
   },
   "errorBoundary.errorWithVersion": {
-    "defaultMessage": "Goose v{version}でエラーが発生しました。"
+    "defaultMessage": "GooseMED v{version}でエラーが発生しました。"
   },
   "errorBoundary.heading": {
     "defaultMessage": "ガァ！"
@@ -1188,7 +1188,7 @@
     "defaultMessage": "ここで有効にした拡張機能は、新しいチャットのデフォルトとして使用されます。チャット中にアクティブな拡張機能を切り替えることもできます。"
   },
   "extensionsView.description": {
-    "defaultMessage": "これらの拡張機能は Model Context Protocol（MCP）を使用します。Prompts、Resources、Tools の3つの主要コンポーネントで Goose の機能を拡張できます。検索するには {searchShortcut}。"
+    "defaultMessage": "これらの拡張機能は Model Context Protocol（MCP）を使用します。Prompts、Resources、Tools の3つの主要コンポーネントで GooseMED の機能を拡張できます。検索するには {searchShortcut}。"
   },
   "extensionsView.heading": {
     "defaultMessage": "拡張機能"
@@ -1212,13 +1212,13 @@
     "defaultMessage": "Certificate fingerprint requires an https URL"
   },
   "externalBackendSection.restartNote": {
-    "defaultMessage": "変更を有効にするには Goose の再起動が必要です。新しいチャットウィンドウは外部サーバーに接続します。"
+    "defaultMessage": "変更を有効にするには GooseMED の再起動が必要です。新しいチャットウィンドウは外部サーバーに接続します。"
   },
   "externalBackendSection.secretKey": {
     "defaultMessage": "シークレットキー"
   },
   "externalBackendSection.secretKeyHelp": {
-    "defaultMessage": "Goose サーバーに設定されたシークレットキー（GOOSE_SERVER__SECRET_KEY）"
+    "defaultMessage": "GooseMED サーバーに設定されたシークレットキー（GOOSE_SERVER__SECRET_KEY）"
   },
   "externalBackendSection.secretKeyPlaceholder": {
     "defaultMessage": "サーバーのシークレットキーを入力"
@@ -1227,10 +1227,10 @@
     "defaultMessage": "サーバーURL"
   },
   "externalBackendSection.serverUrlHelp": {
-    "defaultMessage": "Enter the HTTP(S) base URL. Goose checks /status and connects to /acp under this base."
+    "defaultMessage": "Enter the HTTP(S) base URL. GooseMED checks /status and connects to /acp under this base."
   },
   "externalBackendSection.title": {
-    "defaultMessage": "Goose Server"
+    "defaultMessage": "GooseMED Server"
   },
   "externalBackendSection.urlBaseError": {
     "defaultMessage": "URL must be the backend base URL before /acp, without query parameters or fragments"
@@ -1263,7 +1263,7 @@
     "defaultMessage": "開発者"
   },
   "goosehintsModal.dialogDescription": {
-    "defaultMessage": "Goose とのコミュニケーションを改善するために、プロジェクトに関する追加コンテキストを提供します"
+    "defaultMessage": "GooseMED とのコミュニケーションを改善するために、プロジェクトに関する追加コンテキストを提供します"
   },
   "goosehintsModal.dialogTitle": {
     "defaultMessage": "プロジェクトヒントを設定（.goosehints）"
@@ -1284,7 +1284,7 @@
     "defaultMessage": ".goosehints ファイルが見つかりました: {filePath}"
   },
   "goosehintsModal.helpText1": {
-    "defaultMessage": ".goosehints は、プロジェクトに関する追加コンテキストを提供し、Goose とのコミュニケーションを改善するためのテキストファイルです。"
+    "defaultMessage": ".goosehints は、プロジェクトに関する追加コンテキストを提供し、GooseMED とのコミュニケーションを改善するためのテキストファイルです。"
   },
   "goosehintsModal.helpText2": {
     "defaultMessage": "拡張機能ページで {bold} 拡張機能が有効になっていることを確認してください。この拡張機能は .goosehints を使用するために必要です。.goosehints の更新を反映するにはセッションの再起動が必要です。"
@@ -1311,13 +1311,13 @@
     "defaultMessage": "設定"
   },
   "goosehintsSection.description": {
-    "defaultMessage": "Goose に追加コンテキストを提供するために、プロジェクトの .goosehints ファイルを設定します"
+    "defaultMessage": "GooseMED に追加コンテキストを提供するために、プロジェクトの .goosehints ファイルを設定します"
   },
   "goosehintsSection.title": {
     "defaultMessage": "プロジェクトヒント（.goosehints）"
   },
   "groupedExtensionLoadingToast.askGoose": {
-    "defaultMessage": "Gooseに聞く"
+    "defaultMessage": "GooseMEDに聞く"
   },
   "groupedExtensionLoadingToast.collapseDetails": {
     "defaultMessage": "詳細を折りたたむ"
@@ -1452,10 +1452,10 @@
     "defaultMessage": "キャンセル"
   },
   "importRecipeForm.deeplinkHint": {
-    "defaultMessage": "goose://recipe?config= で始まるレシピのディープリンクを貼り付けてください"
+    "defaultMessage": "goosemed://recipe?config= で始まるレシピのディープリンクを貼り付けてください"
   },
   "importRecipeForm.deeplinkPlaceholder": {
-    "defaultMessage": "goose://recipe?config=... のディープリンクをここに貼り付け"
+    "defaultMessage": "goosemed://recipe?config=... のディープリンクをここに貼り付け"
   },
   "importRecipeForm.example": {
     "defaultMessage": "例"
@@ -1596,13 +1596,13 @@
     "defaultMessage": "アプリケーションショートカット"
   },
   "keyboardShortcuts.categoryApplicationDescription": {
-    "defaultMessage": "Gooseがアクティブなときに有効なショートカット"
+    "defaultMessage": "GooseMEDがアクティブなときに有効なショートカット"
   },
   "keyboardShortcuts.categoryGlobal": {
     "defaultMessage": "グローバルショートカット"
   },
   "keyboardShortcuts.categoryGlobalDescription": {
-    "defaultMessage": "Gooseにフォーカスがなくても、システム全体で有効なショートカット"
+    "defaultMessage": "GooseMEDにフォーカスがなくても、システム全体で有効なショートカット"
   },
   "keyboardShortcuts.categorySearch": {
     "defaultMessage": "検索ショートカット"
@@ -1644,10 +1644,10 @@
     "defaultMessage": "前を検索"
   },
   "keyboardShortcuts.focusWindowDescription": {
-    "defaultMessage": "どこからでもGooseウィンドウを前面に表示"
+    "defaultMessage": "どこからでもGooseMEDウィンドウを前面に表示"
   },
   "keyboardShortcuts.focusWindowLabel": {
-    "defaultMessage": "Gooseウィンドウにフォーカス"
+    "defaultMessage": "GooseMEDウィンドウにフォーカス"
   },
   "keyboardShortcuts.loading": {
     "defaultMessage": "読み込み中..."
@@ -1659,7 +1659,7 @@
     "defaultMessage": "新規チャット"
   },
   "keyboardShortcuts.newChatWindowDescription": {
-    "defaultMessage": "新しいGooseウィンドウを開く"
+    "defaultMessage": "新しいGooseMEDウィンドウを開く"
   },
   "keyboardShortcuts.newChatWindowLabel": {
     "defaultMessage": "新規チャットウィンドウ"
@@ -1698,7 +1698,7 @@
     "defaultMessage": "デフォルトに戻す"
   },
   "keyboardShortcuts.restartDescription": {
-    "defaultMessage": "アプリケーションショートカット（新規チャット、設定など）の変更を反映するには、Gooseの再起動が必要です。グローバルショートカット（ウィンドウにフォーカス、クイックランチャー）はすぐに有効になります。"
+    "defaultMessage": "アプリケーションショートカット（新規チャット、設定など）の変更を反映するには、GooseMEDの再起動が必要です。グローバルショートカット（ウィンドウにフォーカス、クイックランチャー）はすぐに有効になります。"
   },
   "keyboardShortcuts.restartRequired": {
     "defaultMessage": "再起動が必要です"
@@ -3399,7 +3399,7 @@
     "defaultMessage": "ディープリンク"
   },
   "scheduleModal.deepLinkPlaceholder": {
-    "defaultMessage": "goose://recipe リンクをここに貼り付け..."
+    "defaultMessage": "goosemed://recipe リンクをここに貼り付け..."
   },
   "scheduleModal.editSchedule": {
     "defaultMessage": "スケジュールを編集"
@@ -3414,7 +3414,7 @@
     "defaultMessage": "選択したファイルを読み取れませんでした。"
   },
   "scheduleModal.invalidDeepLink": {
-    "defaultMessage": "無効なディープリンクです。goose://recipe リンクを使用してください。"
+    "defaultMessage": "無効なディープリンクです。goosemed://recipe リンクを使用してください。"
   },
   "scheduleModal.invalidFileType": {
     "defaultMessage": "無効なファイル形式です。YAMLファイル（.yaml または .yml）を選択してください"
@@ -3759,7 +3759,7 @@
     "defaultMessage": "チャット履歴"
   },
   "sessions.chatHistoryDesc": {
-    "defaultMessage": "Gooseとの過去の会話を表示・検索できます。{shortcut}で検索。"
+    "defaultMessage": "GooseMEDとの過去の会話を表示・検索できます。{shortcut}で検索。"
   },
   "sessions.close": {
     "defaultMessage": "閉じる"
@@ -3795,10 +3795,10 @@
     "defaultMessage": "リンクをインポート"
   },
   "sessions.importNostr.description": {
-    "defaultMessage": "Goose Nostr共有リンクを貼り付けて、セッションを取得・復号・インポートします。"
+    "defaultMessage": "GooseMED Nostr共有リンクを貼り付けて、セッションを取得・復号・インポートします。"
   },
   "sessions.importNostr.placeholder": {
-    "defaultMessage": "goose://sessions/nostr?nevent=...&key=..."
+    "defaultMessage": "goosemed://sessions/nostr?nevent=...&key=..."
   },
   "sessions.importNostr.title": {
     "defaultMessage": "Nostrセッションをインポート"
@@ -4017,7 +4017,7 @@
     "defaultMessage": "設定を開く"
   },
   "settings.notifications.task.description": {
-    "defaultMessage": "ウィンドウがバックグラウンドにある間にGooseがタスクを完了したら通知します"
+    "defaultMessage": "ウィンドウがバックグラウンドにある間にGooseMEDがタスクを完了したら通知します"
   },
   "settings.notifications.task.title": {
     "defaultMessage": "タスク完了通知"
@@ -4107,7 +4107,7 @@
     "defaultMessage": "スキルを検索..."
   },
   "skillsView.skillsDescription": {
-    "defaultMessage": "Gooseの機能を拡張するインストール済みスキルを表示します。{shortcut}で検索。"
+    "defaultMessage": "GooseMEDの機能を拡張するインストール済みスキルを表示します。{shortcut}で検索。"
   },
   "skillsView.skillsTitle": {
     "defaultMessage": "スキル"
@@ -4422,7 +4422,7 @@
     "defaultMessage": "{toolName}の実行を許可しますか？"
   },
   "toolConfirmation.gooseWouldLikeToCallWithName": {
-    "defaultMessage": "Gooseが{toolName}を実行しようとしています。許可しますか？"
+    "defaultMessage": "GooseMEDが{toolName}を実行しようとしています。許可しますか？"
   },
   "userMessage.cancel": {
     "defaultMessage": "キャンセル"

@@ -336,8 +336,10 @@ describe('renderer provenance', () => {
     );
     expect(
       isAppRendererUrl(
-        'file:///Applications/Goose.app/Contents/Resources/renderer/main_window/index.html#/settings',
-        new URL('file:///Applications/Goose.app/Contents/Resources/renderer/main_window/index.html')
+        'file:///Applications/GooseMED.app/Contents/Resources/renderer/main_window/index.html#/settings',
+        new URL(
+          'file:///Applications/GooseMED.app/Contents/Resources/renderer/main_window/index.html'
+        )
       )
     ).toBe(true);
   });
@@ -348,8 +350,10 @@ describe('renderer provenance', () => {
     expect(isAppRendererUrl('https://attacker.example/#/settings', devServerUrl)).toBe(false);
     expect(
       isAppRendererUrl(
-        'file://attacker/Applications/Goose.app/Contents/Resources/renderer/main_window/index.html',
-        new URL('file:///Applications/Goose.app/Contents/Resources/renderer/main_window/index.html')
+        'file://attacker/Applications/GooseMED.app/Contents/Resources/renderer/main_window/index.html',
+        new URL(
+          'file:///Applications/GooseMED.app/Contents/Resources/renderer/main_window/index.html'
+        )
       )
     ).toBe(false);
     expect(isAppRendererUrl('not a URL', devServerUrl)).toBe(false);

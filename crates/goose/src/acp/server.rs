@@ -1213,7 +1213,7 @@ impl GooseAcpAgent {
         #[cfg(feature = "goosemed")]
         if !mcp_servers.is_empty() {
             return Err(agent_client_protocol::Error::invalid_params()
-                .data("client-supplied MCP servers are disabled by the GooseMed security policy"));
+                .data("client-supplied MCP servers are disabled by the GooseMED security policy"));
         }
 
         #[cfg(not(feature = "goosemed"))]

@@ -170,7 +170,7 @@ pub fn clear_active_provider(config: &Config) -> Result<(), ConfigError> {
     {
         let _ = config;
         Err(ConfigError::PolicyViolation(
-            "the fixed GooseMed provider cannot be cleared".to_string(),
+            "the fixed GooseMED provider cannot be cleared".to_string(),
         ))
     }
 

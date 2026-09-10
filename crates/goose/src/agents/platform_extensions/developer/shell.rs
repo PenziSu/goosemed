@@ -402,7 +402,7 @@ impl ShellTool {
     ) -> CallToolResult {
         if !shell_is_available() {
             return Self::error_result(
-                "GooseMed Shell is disabled on this operating system because no verified OS sandbox is available.",
+                "GooseMED Shell is disabled on this operating system because no verified OS sandbox is available.",
                 None,
             );
         }
@@ -724,7 +724,7 @@ fn build_shell_command(
 ) -> Result<tokio::process::Command, String> {
     if !shell_is_available() {
         return Err(
-            "GooseMed Shell is disabled on this operating system because no verified OS sandbox is available."
+            "GooseMED Shell is disabled on this operating system because no verified OS sandbox is available."
                 .to_string(),
         );
     }

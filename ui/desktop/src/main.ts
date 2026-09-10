@@ -33,7 +33,7 @@ import { startGooseServe } from './gooseServe';
 import { getLoginShellPath } from './loginShellPath';
 import { GooseServeLeaseRegistry, type GooseServeLease } from './gooseServeLeaseRegistry';
 import { acpWebSocketUrlFromHttpBase, normalizeAcpHttpBaseUrl } from './acp/url';
-import { expandTilde, sanitizeGoosePathRoot } from './utils/pathUtils';
+import { expandTilde } from './utils/pathUtils';
 import log from './utils/logger';
 import { ensureWinShims } from './utils/winShims';
 import { addRecentDir, loadRecentDirs } from './utils/recentDirs';
@@ -57,7 +57,14 @@ import {
   readSelectedRecipe,
 } from './desktopFileAccess';
 import { disableConsoleOutput } from './utils/disableConsoleOutput';
+import {
+  APP_NAME,
+  DEEP_LINK_PREFIX,
+  DEEP_LINK_SCHEME,
+  PERSISTENT_SESSION_PARTITION,
+} from './appIdentity';
 
+app.setName(APP_NAME);
 disableConsoleOutput();
 
 // =======================================================================
@@ -94,11 +101,11 @@ const MENU_TRANSLATIONS_ZH_CN: Record<string, string> = {
   'New Chat Window': '新建聊天窗口',
   'Open Directory...': '打开目录…',
   'Recent Directories': '最近的目录',
-  'Focus Goose Window': '聚焦 Goose 窗口',
+  'Focus GooseMED Window': '聚焦 GooseMED 窗口',
   'Quick Launcher': '快速启动器',
   'Always on Top': '窗口置顶',
   'Toggle Navigation': '切换导航',
-  'About Goose': '关于 Goose',
+  'About GooseMED': '关于 GooseMED',
   // Electron's default role-based labels we want to translate as well.
   // (The menu role itself still provides the correct behaviour; only the
   // display string is overridden.)
@@ -124,7 +131,7 @@ const MENU_TRANSLATIONS_ZH_CN: Record<string, string> = {
   'Bring All to Front': '全部置于最前',
   'Emoji & Symbols': '表情符号',
   'Start Dictation…': '开始听写…',
-  'Hide Goose': '隐藏 Goose',
+  'Hide GooseMED': '隐藏 GooseMED',
   'Hide Others': '隐藏其他',
   'Show All': '全部显示',
   Services: '服务',
@@ -380,7 +387,7 @@ app.whenReady().then(() => {
 // Main-process net.fetch and renderer WebSockets: pin to the exact cert once known.
 app.whenReady().then(() => {
   installBackendCertificateVerifiers(
-    [session.defaultSession, session.fromPartition('persist:goose')],
+    [session.defaultSession, session.fromPartition(PERSISTENT_SESSION_PARTITION)],
     {
       has: isTrustedHost,
       verify: verifyBackendCertificate,
@@ -398,23 +405,27 @@ if (process.env.ENABLE_PLAYWRIGHT) {
 // In production, register normally
 if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
   // Development mode - force registration
-  console.log('[Main] Development mode: Forcing protocol registration for goose://');
-  app.setAsDefaultProtocolClient('goose');
+  console.log(`[Main] Development mode: Forcing protocol registration for ${DEEP_LINK_PREFIX}`);
+  app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
 
   if (process.platform === 'darwin') {
     try {
       // Reset the default handler to ensure dev version takes precedence
-      spawn('open', ['-a', process.execPath, '--args', '--reset-protocol-handler', 'goose'], {
-        detached: true,
-        stdio: 'ignore',
-      });
+      spawn(
+        'open',
+        ['-a', process.execPath, '--args', '--reset-protocol-handler', DEEP_LINK_SCHEME],
+        {
+          detached: true,
+          stdio: 'ignore',
+        }
+      );
     } catch {
       console.warn('[Main] Could not reset protocol handler');
     }
   }
 } else {
   // Production mode - normal registration
-  app.setAsDefaultProtocolClient('goose');
+  app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
 }
 
 // Apply single instance lock on Windows and Linux where it's needed for deep links
@@ -428,7 +439,7 @@ if (process.platform !== 'darwin') {
     app.quit();
   } else {
     app.on('second-instance', (_event, commandLine) => {
-      const protocolUrl = commandLine.find((arg) => arg.startsWith('goose://'));
+      const protocolUrl = commandLine.find((arg) => arg.startsWith(DEEP_LINK_PREFIX));
       if (protocolUrl) {
         const parsedUrl = new URL(protocolUrl);
         // If it's a bot/recipe URL, handle it directly by creating a new window
@@ -497,7 +508,7 @@ if (process.platform !== 'darwin') {
   }
 
   // Handle protocol URLs on Windows and Linux startup
-  const protocolUrl = process.argv.find((arg) => arg.startsWith('goose://'));
+  const protocolUrl = process.argv.find((arg) => arg.startsWith(DEEP_LINK_PREFIX));
   if (protocolUrl) {
     app.whenReady().then(async () => {
       let parsedUrl: URL;
@@ -593,7 +604,7 @@ function getResumeSessionId(parsedUrl: URL): string | null {
 async function createResumeChatWindow(parsedUrl: URL, dir?: string): Promise<boolean> {
   const resumeSessionId = getResumeSessionId(parsedUrl);
   if (!resumeSessionId) {
-    log.warn('[Main] Ignoring goose://resume URL without a session id');
+    log.warn(`[Main] Ignoring ${DEEP_LINK_PREFIX}resume URL without a session id`);
     return false;
   }
 
@@ -745,7 +756,7 @@ app.on('open-url', async (_event, url) => {
 app.on('will-finish-launching', () => {
   if (process.platform === 'darwin') {
     app.setAboutPanelOptions({
-      applicationName: 'Goose',
+      applicationName: APP_NAME,
       applicationVersion: app.getVersion(),
     });
   }
@@ -800,7 +811,7 @@ async function handleFileOpen(filePath: string) {
 
     // Show user-friendly error notification
     new Notification({
-      title: 'Goose',
+      title: APP_NAME,
       body: `Could not open directory: ${path.basename(filePath)}`,
     }).show();
   }
@@ -883,7 +894,7 @@ let appConfig = {
   GOOSE_DEFAULT_PROVIDER: defaultProvider,
   GOOSE_DEFAULT_MODEL: defaultModel,
   GOOSE_PREDEFINED_MODELS: predefinedModels,
-  GOOSE_PATH_ROOT: sanitizeGoosePathRoot(process.env),
+  GOOSE_PATH_ROOT: path.join(app.getPath('userData'), 'backend'),
   GOOSE_WORKING_DIR: '',
   // Whether the window is bound to an external backend (fixed at window
   // creation via gooseServeLeases) and which URL it is bound to.
@@ -1139,7 +1150,7 @@ const createChat = async (
       log.error('goose serve failed to start', error);
       dialog.showMessageBoxSync({
         type: 'error',
-        title: 'Goose Failed to Start',
+        title: `${APP_NAME} Failed to Start`,
         message: 'The backend server failed to start.',
         detail: [
           'Backend: goose serve',
@@ -1226,7 +1237,7 @@ const createChat = async (
               process.env.SECURITY_COMMAND_CLASSIFIER_ENABLED_OVERRIDE,
           }),
         ],
-        partition: 'persist:goose',
+        partition: PERSISTENT_SESSION_PARTITION,
       },
     });
   } catch (error) {
@@ -1478,7 +1489,7 @@ const createLauncher = () => {
           GOOSE_LOCALE: getConfiguredGooseLocale(),
         }),
       ],
-      partition: 'persist:goose',
+      partition: PERSISTENT_SESSION_PARTITION,
     },
     skipTaskbar: true,
     alwaysOnTop: true,
@@ -1566,7 +1577,7 @@ const createTray = () => {
 
   try {
     tray = new Tray(iconPath);
-    tray.setToolTip('GooseMed');
+    tray.setToolTip(APP_NAME);
     tray.setContextMenu(
       Menu.buildFromTemplate([
         { label: 'Show Window', click: showWindow },
@@ -2357,7 +2368,7 @@ async function appMain() {
     }
   });
 
-  const rendererSession = session.fromPartition('persist:goose');
+  const rendererSession = session.fromPartition(PERSISTENT_SESSION_PARTITION);
   await configureProxy(session.defaultSession, rendererSession);
 
   rendererSession.webRequest.onBeforeRequest(
@@ -2449,7 +2460,7 @@ async function appMain() {
 
   const shortcuts = getKeyboardShortcuts(settings);
 
-  const appMenu = menu?.items.find((item) => item.label === 'Goose');
+  const appMenu = menu?.items.find((item) => item.label === APP_NAME);
   if (appMenu?.submenu) {
     appMenu.submenu.insert(1, new MenuItem({ type: 'separator' }));
     if (shortcuts.settings) {
@@ -2577,7 +2588,7 @@ async function appMain() {
     if (shortcuts.focusWindow) {
       fileMenu.submenu.append(
         new MenuItem({
-          label: menuT('Focus Goose Window'),
+          label: menuT('Focus GooseMED Window'),
           accelerator: shortcuts.focusWindow,
           click() {
             focusWindow();
@@ -2684,9 +2695,9 @@ async function appMain() {
         helpMenu.submenu.append(new MenuItem({ type: 'separator' }));
       }
 
-      // Create the About Goose menu item with a submenu
+      // Create the About GooseMED menu item with a submenu
       const aboutGooseMenuItem = new MenuItem({
-        label: menuT('About Goose'),
+        label: menuT('About GooseMED'),
         submenu: Menu.buildFromTemplate([]), // Start with an empty submenu for About
       });
 
@@ -2923,7 +2934,7 @@ async function appMain() {
               GOOSE_VERSION: version,
             }),
           ],
-          partition: 'persist:goose',
+          partition: PERSISTENT_SESSION_PARTITION,
         },
       });
 
@@ -2998,7 +3009,7 @@ app.whenReady().then(async () => {
   try {
     await appMain();
   } catch (error) {
-    dialog.showErrorBox('Goose Error', `Failed to create main window: ${error}`);
+    dialog.showErrorBox(`${APP_NAME} Error`, `Failed to create main window: ${error}`);
     app.quit();
   }
 });

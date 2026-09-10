@@ -20,7 +20,7 @@ pub fn fixed_extensions() -> Vec<ExtensionConfig> {
         },
         ExtensionConfig::StreamableHttp {
             name: FIXED_MCP_NAME.to_string(),
-            description: "GooseMed controlled IRB data intermediary".to_string(),
+            description: "GooseMED controlled IRB data intermediary".to_string(),
             uri: MCP_ENDPOINT.to_string(),
             envs: Default::default(),
             env_keys: Vec::new(),
@@ -44,7 +44,7 @@ pub fn ensure_provider(provider: &str) -> anyhow::Result<()> {
     if provider == FIXED_PROVIDER {
         Ok(())
     } else {
-        anyhow::bail!("GooseMed only permits the '{}' provider", FIXED_PROVIDER)
+        anyhow::bail!("GooseMED only permits the '{}' provider", FIXED_PROVIDER)
     }
 }
 
@@ -52,7 +52,7 @@ pub fn ensure_model(model: &str) -> anyhow::Result<()> {
     if model == FIXED_MODEL {
         Ok(())
     } else {
-        anyhow::bail!("GooseMed only permits the '{}' model", FIXED_MODEL)
+        anyhow::bail!("GooseMED only permits the '{}' model", FIXED_MODEL)
     }
 }
 

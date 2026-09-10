@@ -1,13 +1,23 @@
 {
-  "project": "GooseMed",
+  "project": "GooseMED",
   "branch": "security/medical-data-hardening-v1",
-  "updatedAt": "2026-09-10T00:36:20.000Z",
+  "updatedAt": "2026-09-10T01:53:04.625Z",
   "columns": [
     {
       "id": "backlog",
       "title": "待盤點",
       "accent": "bg-slate-400",
-      "cards": []
+      "cards": [
+        {
+          "id": "task-1789005184625",
+          "title": "恢復MCP Server 設定",
+          "summary": "恢復原廠 MCP Server 設定。增加檢查機制，僅限 172.22.0.0/16 網段的 MCP Server URL 可以設定，允許 Domain Name ，可是DNS反解的IP也必須是 172.22.0.0/16 網域。",
+          "acceptance": "確保只有 172.22.0.0/16 網段的 MCP Server 可以設定在 GooseMED 上。",
+          "details": "",
+          "priority": "P1",
+          "updatedAt": "2026-09-10T01:53:04.625Z"
+        }
+      ]
     },
     {
       "id": "ready",
@@ -32,6 +42,15 @@
       "title": "完成",
       "accent": "bg-teal-600",
       "cards": [
+        {
+          "id": "rename-desktop-goosemed",
+          "title": "將桌面應用識別改為 GooseMED",
+          "summary": "分離 GooseMED 與原生 Goose 的應用名稱、Bundle ID、資料目錄與 Deep Link。",
+          "acceptance": "封裝結果為 GooseMED.app，使用獨立 Bundle ID、goosemed:// Scheme 與 Application Support/GooseMED，且能在原生 Goose 旁獨立啟動。",
+          "details": "已將桌面應用、執行檔與 Helper 統一命名為 GooseMED，Bundle ID 改為 io.github.penzisu.goosemed，Deep Link 改為 goosemed://。Electron 使用 persist:goosemed 與 ~/Library/Application Support/GooseMED，內嵌後端固定使用其中的 backend 目錄，Keychain service 改為 goosemed；Windows LocalAppData 與各平台封裝路徑同步隔離。Apple Silicon release 封裝成功，主程式與內嵌後端均為 arm64，codesign、ZIP 完整性、803 項桌面測試、Clippy、lint、型別及語系檢查全數通過。已在 M3 實際啟動，確認程序名稱、資料落點及 ACP 僅監聽 127.0.0.1。",
+          "priority": "P1",
+          "updatedAt": "2026-09-10T01:22:28.000Z"
+        },
         {
           "id": "apple-silicon-test-build",
           "title": "編譯 Apple Silicon 測試版",

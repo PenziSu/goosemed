@@ -2203,7 +2203,7 @@ mod tests {
             (
                 "PATH",
                 Some(
-                    "/Applications/Goose.app/Contents/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+                    "/Applications/GooseMED.app/Contents/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin",
                 ),
             ),
         ]);

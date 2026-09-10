@@ -29,7 +29,7 @@ impl ProviderDescriptor for OpenAiProviderDef {
         #[cfg(feature = "goosemed")]
         return ProviderMetadata::with_models(
             crate::goosemed::FIXED_PROVIDER,
-            "GooseMed local model",
+            "GooseMED local model",
             "Hospital-controlled OpenAI-compatible inference endpoint",
             crate::goosemed::FIXED_MODEL,
             vec![ModelInfo::new(crate::goosemed::FIXED_MODEL)],
@@ -273,7 +273,7 @@ pub fn from_custom_config(
     #[cfg(feature = "goosemed")]
     {
         let _ = (config, tls_config);
-        anyhow::bail!("custom providers are disabled by the GooseMed security policy");
+        anyhow::bail!("custom providers are disabled by the GooseMED security policy");
     }
 
     #[cfg(not(feature = "goosemed"))]

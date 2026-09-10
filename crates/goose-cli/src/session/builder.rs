@@ -305,7 +305,7 @@ async fn resolve_provider_and_model(
         let provider_name = goose::goosemed::FIXED_PROVIDER.to_string();
         let model_name = goose::goosemed::FIXED_MODEL.to_string();
         let mut model_config = model_config_from_user_config(&provider_name, &model_name)
-            .expect("the compiled GooseMed model policy must be valid");
+            .expect("the compiled GooseMED model policy must be valid");
         if !session_config.interactive {
             model_config = model_config.with_cache_ttl_clamped();
         }

@@ -15,7 +15,7 @@ const i18n = defineMessages({
   },
   checkProviderErrorTitle: {
     id: 'onboardingGuard.checkProviderErrorTitle',
-    defaultMessage: 'Unable to connect to Goose server',
+    defaultMessage: 'Unable to connect to GooseMED server',
   },
   checkProviderErrorDescription: {
     id: 'onboardingGuard.checkProviderErrorDescription',
@@ -59,7 +59,6 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
 
   useEffect(() => {
     checkProvider();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isCheckingProvider) {

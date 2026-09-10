@@ -1481,7 +1481,7 @@ impl ExtensionManager {
         #[cfg(feature = "goosemed")]
         if !crate::goosemed::extension_is_allowed(&config) {
             return Err(ExtensionError::ConfigError(format!(
-                "extension '{}' is not permitted by the GooseMed security policy",
+                "extension '{}' is not permitted by the GooseMED security policy",
                 config.name()
             )));
         }

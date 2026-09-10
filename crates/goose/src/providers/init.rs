@@ -251,7 +251,7 @@ pub async fn providers() -> Vec<(ProviderMetadata, ProviderType)> {
 
 pub async fn refresh_custom_providers() -> Result<()> {
     #[cfg(feature = "goosemed")]
-    anyhow::bail!("custom providers are disabled by the GooseMed security policy");
+    anyhow::bail!("custom providers are disabled by the GooseMED security policy");
 
     #[cfg(not(feature = "goosemed"))]
     {

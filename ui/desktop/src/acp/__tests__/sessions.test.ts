@@ -126,7 +126,7 @@ describe('ACP sessions', () => {
     );
 
     await acpNewSession('/tmp', [], {
-      recipeDeeplink: 'goose://recipe?url=example',
+      recipeDeeplink: 'goosemed://recipe?url=example',
       recipeParameterScopeId: 'scope-1',
     });
 
@@ -135,7 +135,7 @@ describe('ACP sessions', () => {
       mcpServers: [],
       _meta: {
         client: 'goose-desktop',
-        recipeDeeplink: 'goose://recipe?url=example',
+        recipeDeeplink: 'goosemed://recipe?url=example',
         recipeParameterScopeId: 'scope-1',
       },
     });
