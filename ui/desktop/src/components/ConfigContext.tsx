@@ -7,6 +7,7 @@ import {
   removeConfigExtension,
   setConfigExtensionEnabled,
 } from '../acp/extensions';
+import { pruneDeprecatedBundledExtensions, syncBundledExtensions } from './settings/extensions';
 import { nameToKey } from './settings/extensions/utils';
 import type { ExtensionConfig } from '../types/extensions';
 import type { ProviderDetails } from '../types/providers';
@@ -170,7 +171,25 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
       // Load extensions
       try {
         const extensionsResponse = await getConfiguredExtensions();
-        setExtensionsList(extensionsResponse.extensions);
+        let extensions = extensionsResponse.extensions;
+
+        const addExtensionForSync = async (
+          _name: string,
+          config: ExtensionConfig,
+          enabled: boolean
+        ) => {
+          await addConfigExtension(config, enabled);
+        };
+        const removeExtensionForSync = async (configKey: string) => {
+          await removeConfigExtension(configKey);
+        };
+        extensions = await pruneDeprecatedBundledExtensions(extensions, removeExtensionForSync);
+        await syncBundledExtensions(extensions, addExtensionForSync);
+
+        const refreshedResponse = await getConfiguredExtensions();
+        extensions = refreshedResponse.extensions;
+
+        setExtensionsList(extensions);
         setExtensionWarnings(extensionsResponse.warnings || []);
       } catch (error) {
         console.error('Failed to load extensions:', error);

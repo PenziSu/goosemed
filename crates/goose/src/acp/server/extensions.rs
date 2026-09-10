@@ -442,12 +442,18 @@ mod tests {
 
     #[cfg(feature = "goosemed")]
     #[tokio::test]
-    async fn goosemed_only_accepts_internal_streamable_http_extensions() {
+    async fn goosemed_accepts_builtins_and_internal_streamable_http_extensions() {
+        let memory = builtin_config("memory");
+        let unknown_builtin = builtin_config("unknown");
         let internal =
             ExtensionConfig::streamable_http("irb", "http://172.22.50.25:3001/mcp", "", 300_u64);
         let external =
             ExtensionConfig::streamable_http("external", "https://1.1.1.1/mcp", "", 300_u64);
 
+        assert!(ensure_goosemed_extension_allowed(&memory).await.is_ok());
+        assert!(ensure_goosemed_extension_allowed(&unknown_builtin)
+            .await
+            .is_err());
         assert!(ensure_goosemed_extension_allowed(&internal).await.is_ok());
         assert!(ensure_goosemed_extension_allowed(&external).await.is_err());
     }

@@ -19,9 +19,7 @@ use crate::agents::{
     Agent, AgentConfig, ExtensionConfig, ExtensionLoadResult, GoosePlatform, SessionConfig,
 };
 use crate::config::base::CONFIG_YAML_NAME;
-use crate::config::extensions::configured_enabled_state;
-#[cfg(not(feature = "goosemed"))]
-use crate::config::extensions::get_enabled_extensions_with_config;
+use crate::config::extensions::{configured_enabled_state, get_enabled_extensions_with_config};
 use crate::config::paths::Paths;
 use crate::config::permission::PermissionManager;
 use crate::config::{Config, GooseMode};
@@ -603,14 +601,13 @@ fn initial_session_extensions(
     #[cfg(feature = "goosemed")]
     {
         let _ = (
-            config,
             builtin_selection,
             project_root,
             mcp_servers,
             goose_extensions,
             recipe_extensions,
         );
-        Ok(crate::goosemed::fixed_extensions())
+        Ok(get_enabled_extensions_with_config(config))
     }
 
     #[cfg(not(feature = "goosemed"))]
@@ -2934,6 +2931,7 @@ mod tests {
             available_tools: None,
         };
 
+        let expected = get_enabled_extensions_with_config(&config);
         let extensions = initial_session_extensions(
             &config,
             &explicit_builtin("github"),
@@ -2947,7 +2945,10 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(extensions, crate::goosemed::fixed_extensions());
+        assert_eq!(extensions, expected);
+        assert!(!extensions
+            .iter()
+            .any(|extension| extension.name() == "untrusted"));
     }
 
     #[test]

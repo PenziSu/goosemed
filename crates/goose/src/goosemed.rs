@@ -6,28 +6,47 @@ pub const FIXED_PROVIDER: &str = "openai";
 pub const FIXED_MODEL: &str = "gpt-oss-120b";
 pub const LLM_ENDPOINT: &str = "http://172.22.135.127:8000/v1";
 
+const TRUSTED_BUILTIN_EXTENSION_KEYS: &[&str] =
+    &["autovisualiser", "computercontroller", "memory", "tutorial"];
+
+const TRUSTED_PLATFORM_EXTENSION_KEYS: &[&str] = &[
+    "analyze",
+    "apps",
+    "chatrecall",
+    "developer",
+    "extensionmanager",
+    "orchestrator",
+    "scheduler",
+    "skills",
+    "summarize",
+    "summon",
+    "todo",
+    "tom",
+];
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ApprovedMcpEndpoint {
     pub host: String,
     pub addresses: Vec<SocketAddr>,
 }
 
-pub fn fixed_extensions() -> Vec<ExtensionConfig> {
-    vec![ExtensionConfig::Platform {
-        name: "developer".to_string(),
-        description: "Write and edit files, and execute shell commands".to_string(),
-        display_name: Some("Developer".to_string()),
-        bundled: Some(true),
-        available_tools: Vec::new(),
-    }]
-}
-
 pub fn embedded_extension_is_allowed(config: &ExtensionConfig) -> bool {
-    matches!(config, ExtensionConfig::Platform { name, .. } if name == "developer")
+    match config {
+        ExtensionConfig::Builtin { name, .. } | ExtensionConfig::Platform { name, .. } => {
+            let key = crate::config::extensions::name_to_key(name);
+            TRUSTED_BUILTIN_EXTENSION_KEYS.contains(&key.as_str())
+                || TRUSTED_PLATFORM_EXTENSION_KEYS.contains(&key.as_str())
+        }
+        _ => false,
+    }
 }
 
 pub async fn ensure_extension_allowed(config: &ExtensionConfig) -> Result<(), String> {
-    if !embedded_extension_is_allowed(config) && extension_uses_reserved_name(config) {
+    if embedded_extension_is_allowed(config) {
+        return Ok(());
+    }
+
+    if extension_uses_reserved_name(config) {
         return Err(format!(
             "extension name '{}' is reserved by GooseMED",
             config.name()
@@ -35,7 +54,6 @@ pub async fn ensure_extension_allowed(config: &ExtensionConfig) -> Result<(), St
     }
 
     match config {
-        ExtensionConfig::Platform { .. } if embedded_extension_is_allowed(config) => Ok(()),
         ExtensionConfig::StreamableHttp { uri, socket, .. } => {
             if socket.is_some() {
                 return Err("GooseMED does not permit MCP Unix socket transports".to_string());
@@ -43,16 +61,16 @@ pub async fn ensure_extension_allowed(config: &ExtensionConfig) -> Result<(), St
             resolve_mcp_endpoint(uri).await.map(|_| ())
         }
         _ => Err(format!(
-            "extension '{}' is not permitted; GooseMED only allows Developer and Streamable HTTP MCP servers in 172.22.0.0/16",
+            "extension '{}' is not permitted; GooseMED only allows registered built-in Extensions and Streamable HTTP MCP servers in 172.22.0.0/16",
             config.name()
         )),
     }
 }
 
 pub fn extension_uses_reserved_name(config: &ExtensionConfig) -> bool {
-    fixed_extensions()
-        .iter()
-        .any(|fixed| fixed.key() == config.key())
+    let key = config.key();
+    TRUSTED_BUILTIN_EXTENSION_KEYS.contains(&key.as_str())
+        || TRUSTED_PLATFORM_EXTENSION_KEYS.contains(&key.as_str())
 }
 
 pub(crate) async fn resolve_mcp_endpoint(uri: &str) -> Result<ApprovedMcpEndpoint, String> {
@@ -144,12 +162,8 @@ mod tests {
     #[tokio::test]
     async fn policy_rejects_unapproved_extensions() {
         let stdio = ExtensionConfig::stdio("untrusted", "python", "", 30_u64);
-        let reserved_name = ExtensionConfig::streamable_http(
-            "Developer",
-            "http://172.22.10.20:3001/mcp",
-            "",
-            30_u64,
-        );
+        let reserved_name =
+            ExtensionConfig::streamable_http("Memory", "http://172.22.10.20:3001/mcp", "", 30_u64);
         let internal_mcp =
             ExtensionConfig::streamable_http("irb", "http://172.22.10.20:3001/mcp", "", 30_u64);
         let external_mcp =
@@ -159,9 +173,42 @@ mod tests {
         assert!(ensure_extension_allowed(&reserved_name).await.is_err());
         assert!(ensure_extension_allowed(&external_mcp).await.is_err());
         assert!(ensure_extension_allowed(&internal_mcp).await.is_ok());
-        for extension in fixed_extensions() {
+
+        for name in TRUSTED_BUILTIN_EXTENSION_KEYS {
+            let extension = ExtensionConfig::Builtin {
+                name: (*name).to_string(),
+                description: String::new(),
+                display_name: Some((*name).to_string()),
+                timeout: None,
+                bundled: Some(true),
+                available_tools: Vec::new(),
+            };
             assert!(ensure_extension_allowed(&extension).await.is_ok());
         }
+
+        for name in TRUSTED_PLATFORM_EXTENSION_KEYS {
+            let definition = crate::agents::extension::PLATFORM_EXTENSIONS
+                .get(name)
+                .unwrap_or_else(|| panic!("trusted platform Extension '{name}' is not registered"));
+            let extension = ExtensionConfig::Platform {
+                name: definition.name.to_string(),
+                description: definition.description.to_string(),
+                display_name: Some(definition.display_name.to_string()),
+                bundled: Some(true),
+                available_tools: Vec::new(),
+            };
+            assert!(ensure_extension_allowed(&extension).await.is_ok());
+        }
+
+        let unknown_builtin = ExtensionConfig::Builtin {
+            name: "unknown".to_string(),
+            description: String::new(),
+            display_name: None,
+            timeout: None,
+            bundled: Some(true),
+            available_tools: Vec::new(),
+        };
+        assert!(ensure_extension_allowed(&unknown_builtin).await.is_err());
     }
 
     #[test]

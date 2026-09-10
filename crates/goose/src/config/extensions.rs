@@ -1,5 +1,4 @@
 use super::base::Config;
-#[cfg(not(feature = "goosemed"))]
 use crate::agents::extension::PLATFORM_EXTENSIONS;
 use crate::agents::ExtensionConfig;
 use indexmap::IndexMap;
@@ -140,13 +139,6 @@ where
 }
 
 pub fn get_extension_by_name(name: &str) -> Option<ExtensionConfig> {
-    #[cfg(feature = "goosemed")]
-    return crate::goosemed::fixed_extensions()
-        .into_iter()
-        .find(|extension| extension.name() == name || extension.key() == name_to_key(name))
-        .or_else(|| get_extension_by_name_with_config(Config::global(), name));
-
-    #[cfg(not(feature = "goosemed"))]
     get_extension_by_name_with_config(Config::global(), name)
 }
 
@@ -215,14 +207,6 @@ pub fn get_all_extension_names() -> Vec<String> {
 }
 
 pub fn is_extension_enabled(key: &str) -> bool {
-    #[cfg(feature = "goosemed")]
-    if crate::goosemed::fixed_extensions()
-        .iter()
-        .any(|extension| extension.key() == key)
-    {
-        return true;
-    }
-
     let extensions = get_extensions_map();
     extensions.get(key).map(|e| e.enabled).unwrap_or(false)
 }
@@ -239,20 +223,6 @@ pub fn configured_enabled_state(config: &Config, name: &str) -> Option<bool> {
 }
 
 pub fn get_enabled_extensions() -> Vec<ExtensionConfig> {
-    #[cfg(feature = "goosemed")]
-    {
-        let mut extensions = crate::goosemed::fixed_extensions();
-        extensions.extend(
-            get_all_extensions()
-                .into_iter()
-                .filter(|entry| entry.enabled)
-                .map(|entry| entry.config)
-                .filter(|config| !crate::goosemed::extension_uses_reserved_name(config)),
-        );
-        extensions
-    }
-
-    #[cfg(not(feature = "goosemed"))]
     get_all_extensions()
         .into_iter()
         .filter(|ext| ext.enabled)
@@ -261,20 +231,6 @@ pub fn get_enabled_extensions() -> Vec<ExtensionConfig> {
 }
 
 pub fn get_enabled_extensions_with_config(config: &Config) -> Vec<ExtensionConfig> {
-    #[cfg(feature = "goosemed")]
-    {
-        let mut extensions = crate::goosemed::fixed_extensions();
-        extensions.extend(
-            get_extensions_map_with_config(config)
-                .into_values()
-                .filter(|entry| entry.enabled)
-                .map(|entry| entry.config)
-                .filter(|config| !crate::goosemed::extension_uses_reserved_name(config)),
-        );
-        extensions
-    }
-
-    #[cfg(not(feature = "goosemed"))]
     get_extensions_map_with_config(config)
         .into_values()
         .filter(|ext| ext.enabled)
@@ -283,43 +239,37 @@ pub fn get_enabled_extensions_with_config(config: &Config) -> Vec<ExtensionConfi
 }
 
 pub fn get_available_extensions() -> Vec<ExtensionConfig> {
-    #[cfg(feature = "goosemed")]
-    return crate::goosemed::fixed_extensions();
+    let mut builtin_names = crate::builtin_extension::get_builtin_extension_names();
+    builtin_names.sort_unstable();
 
-    #[cfg(not(feature = "goosemed"))]
-    {
-        let mut builtin_names = crate::builtin_extension::get_builtin_extension_names();
-        builtin_names.sort_unstable();
+    let mut platform_definitions = PLATFORM_EXTENSIONS
+        .values()
+        .filter(|definition| !definition.hidden)
+        .collect::<Vec<_>>();
+    platform_definitions.sort_unstable_by_key(|definition| definition.name);
 
-        let mut platform_definitions = PLATFORM_EXTENSIONS
-            .values()
-            .filter(|definition| !definition.hidden)
-            .collect::<Vec<_>>();
-        platform_definitions.sort_unstable_by_key(|definition| definition.name);
-
-        builtin_names
-            .into_iter()
-            .map(|name| ExtensionConfig::Builtin {
-                name: name.to_string(),
-                description: String::new(),
-                display_name: Some(name.to_string()),
-                timeout: None,
-                bundled: Some(true),
-                available_tools: Vec::new(),
-            })
-            .chain(
-                platform_definitions
-                    .into_iter()
-                    .map(|definition| ExtensionConfig::Platform {
-                        name: definition.name.to_string(),
-                        description: definition.description.to_string(),
-                        display_name: Some(definition.display_name.to_string()),
-                        bundled: Some(true),
-                        available_tools: Vec::new(),
-                    }),
-            )
-            .collect()
-    }
+    builtin_names
+        .into_iter()
+        .map(|name| ExtensionConfig::Builtin {
+            name: name.to_string(),
+            description: String::new(),
+            display_name: Some(name.to_string()),
+            timeout: None,
+            bundled: Some(true),
+            available_tools: Vec::new(),
+        })
+        .chain(
+            platform_definitions
+                .into_iter()
+                .map(|definition| ExtensionConfig::Platform {
+                    name: definition.name.to_string(),
+                    description: definition.description.to_string(),
+                    display_name: Some(definition.display_name.to_string()),
+                    bundled: Some(true),
+                    available_tools: Vec::new(),
+                }),
+        )
+        .collect()
 }
 
 pub fn get_warnings() -> Vec<String> {
@@ -375,7 +325,7 @@ pub fn resolve_extensions_for_new_session(
     }
 }
 
-#[cfg(all(test, not(feature = "goosemed")))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::fmt;

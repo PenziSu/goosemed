@@ -1,7 +1,7 @@
 {
   "project": "GooseMED",
   "branch": "security/medical-data-hardening-v1",
-  "updatedAt": "2026-09-10T13:46:36.000Z",
+  "updatedAt": "2026-09-10T14:31:32.000Z",
   "columns": [
     {
       "id": "backlog",
@@ -29,11 +29,11 @@
         {
           "id": "task-1789005184625",
           "title": "恢復 MCP Server 設定",
-          "summary": "恢復 MCP 管理功能，同時由後端強制限定 172.22.0.0/16，異常設定可查看錯誤、停用、修改或刪除。",
-          "acceptance": "macOS Desktop 必須看得到 MCP 管理入口，且只有 172.22.0.0/16 網段的 Streamable HTTP MCP 可以啟用。",
-          "details": "已恢復 Desktop 左側「擴充功能」導覽與 /extensions 路由，並保留受控的 Streamable HTTP MCP 新增、修改、啟用、停用與刪除功能。未恢復公開 Extensions 商店按鈕、deeplink 安裝與任意 stdio 擴充功能。UI 全套 96 個測試檔、805 項測試通過，typecheck、ESLint、i18n 檢查通過；Apple Silicon App 已完成 ARM64、簽章與 ZIP 完整性驗證，目前進行實機畫面驗收。",
+          "summary": "恢復 Goose 原生內建 Extension；只有使用者設定的遠端 MCP 強制限定 172.22.0.0/16。",
+          "acceptance": "原生內建 Extension 可正常啟用，遠端 MCP 仍只接受解析結果全部位於 172.22.0.0/16 的 Streamable HTTP。",
+          "details": "恢復 Desktop 啟動時同步 Developer、Computer Controller、Auto Visualiser、Memory 與 Tutorial 的原生流程，並恢復已設定之內建與 Platform Extension 載入。GooseMED 使用明確內建名稱白名單，內建項目不做 IP 檢查；只有 Streamable HTTP 遠端 MCP 解析 DNS 並強制全部位於 172.22.0.0/16。任意 stdio、Unix socket、未知內建項目、冒用內建名稱與非院內遠端 MCP 仍被拒絕。Rust 政策 4 項、設定 15 項、GooseMED 流程 11 項、ACP 新增測試與 Desktop 805 項測試通過，Clippy、typecheck、ESLint、i18n、ARM64、簽章與 ZIP 驗證通過；M3 實際啟動後已確認四個 Goose MCP 內建項目寫入設定。",
           "priority": "P1",
-          "updatedAt": "2026-09-10T13:46:36.000Z"
+          "updatedAt": "2026-09-10T14:31:32.000Z"
         }
       ]
     },
