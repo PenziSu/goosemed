@@ -1,7 +1,7 @@
 {
   "project": "GooseMed",
   "branch": "security/medical-data-hardening-v1",
-  "updatedAt": "2026-09-10T00:13:49.000Z",
+  "updatedAt": "2026-09-10T00:36:20.000Z",
   "columns": [
     {
       "id": "backlog",
@@ -32,6 +32,15 @@
       "title": "完成",
       "accent": "bg-teal-600",
       "cards": [
+        {
+          "id": "apple-silicon-test-build",
+          "title": "編譯 Apple Silicon 測試版",
+          "summary": "產出可在 MacBook Pro M3 執行的 GooseMed 原生桌面程式。",
+          "acceptance": "完成 arm64 release、桌面 .app 與 ZIP，並通過架構、簽章及實際啟動檢查。",
+          "details": "已完成 GooseMed 1.49.0 arm64 release 與 Electron 桌面封裝，產出 415 MB 的 Goose.app 及 162 MB 的 ZIP。主程式與內嵌 Goose 均確認為 Mach-O arm64，ad-hoc codesign 完整驗證通過，ZIP 完整性通過，並已在這台 M3 實際啟動主程序、Renderer 與僅綁定 127.0.0.1 的內嵌後端。Clippy 嚴格檢查通過，固定 Provider、模型、MCP 與安全開關共七項 GooseMed 測試通過。全 workspace 上游測試仍包含已刻意移除 Provider 的舊假設，另有一項 MCP 競態測試長時間未結束，因此不列為本測試包的通過條件。",
+          "priority": "P1",
+          "updatedAt": "2026-09-10T00:36:20.000Z"
+        },
         {
           "id": "dashboard-card-details",
           "title": "新增任務卡調整總結與 Detail 視窗",
