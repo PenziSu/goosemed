@@ -1,10 +1,4 @@
-import {
-  Clock,
-  FileText,
-  History,
-  MessageSquarePlus,
-  Settings,
-} from 'lucide-react';
+import { Clock, FileText, History, MessageSquarePlus, Puzzle, Settings } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { defineMessages, type IntlShape, type MessageDescriptor } from 'react-intl';
 
@@ -22,6 +16,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'home', path: '/', label: 'New Chat', icon: MessageSquarePlus },
   { id: 'recipes', path: '/recipes', label: 'Recipes', icon: FileText },
   { id: 'scheduler', path: '/schedules', label: 'Scheduler', icon: Clock },
+  { id: 'extensions', path: '/extensions', label: 'Extensions', icon: Puzzle },
   { id: 'sessions', path: '/sessions', label: 'Session History', icon: History },
 ];
 

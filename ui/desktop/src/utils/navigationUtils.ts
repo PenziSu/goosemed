@@ -70,8 +70,10 @@ export const createNavigationHandler = (navigate: NavigateFunction) => {
         navigate('/permission', { state: options });
         break;
       case 'ConfigureProviders':
-      case 'extensions':
         navigate('/settings', { state: options });
+        break;
+      case 'extensions':
+        navigate('/extensions', { state: options });
         break;
       default:
         navigate('/', { state: options });

@@ -34,6 +34,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { FeaturesProvider } from './contexts/FeaturesContext';
 import PermissionSettingsView from './components/settings/permission/PermissionSetting';
 
+import ExtensionsView, { ExtensionsViewOptions } from './components/extensions/ExtensionsView';
 import RecipesView from './components/recipes/RecipesView';
 import StandaloneAppView from './components/apps/StandaloneAppView';
 import { View, ViewOptions } from './utils/navigationUtils';
@@ -205,6 +206,37 @@ const SchedulesRoute = () => {
 
 const RecipesRoute = () => {
   return <RecipesView />;
+};
+
+const ExtensionsRoute = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const viewOptions =
+    (location.state as ExtensionsViewOptions) ||
+    (window.history.state as ExtensionsViewOptions) ||
+    {};
+
+  return (
+    <ExtensionsView
+      onClose={() => navigate(-1)}
+      setView={(view, options) => {
+        switch (view) {
+          case 'chat':
+            navigate('/');
+            break;
+          case 'pair':
+            navigate('/pair', { state: options });
+            break;
+          case 'settings':
+            navigate('/settings', { state: options });
+            break;
+          default:
+            navigate('/');
+        }
+      }}
+      viewOptions={viewOptions}
+    />
+  );
 };
 
 const PermissionRoute = () => {
@@ -596,6 +628,14 @@ export function AppInner() {
                 }
               />
               <Route path="settings" element={<SettingsRoute />} />
+              <Route
+                path="extensions"
+                element={
+                  <ChatProvider chat={chat} setChat={setChat} contextKey="extensions">
+                    <ExtensionsRoute />
+                  </ChatProvider>
+                }
+              />
               <Route path="sessions" element={<SessionsRoute />} />
               <Route path="schedules" element={<SchedulesRoute />} />
               <Route path="recipes" element={<RecipesRoute />} />
