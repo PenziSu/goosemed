@@ -83,6 +83,9 @@ export default function ExtensionConfigFields({
             placeholder={intl.formatMessage(i18n.endpointPlaceholder)}
             className={`w-full ${!submitAttempted || isValid ? 'border-border-primary' : 'border-red-500'} text-text-primary`}
           />
+          <p className="mt-2 text-xs text-text-secondary">
+            GooseMED only accepts MCP hosts that resolve entirely to 172.22.0.0/16.
+          </p>
           {submitAttempted && !isValid && (
             <div className="absolute text-xs text-red-500 mt-1">
               {intl.formatMessage(i18n.endpointRequired)}

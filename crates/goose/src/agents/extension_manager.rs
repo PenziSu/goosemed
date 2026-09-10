@@ -761,15 +761,17 @@ const GOOSE_USER_AGENT: reqwest::header::HeaderValue =
     reqwest::header::HeaderValue::from_static(concat!("goose/", env!("CARGO_PKG_VERSION")));
 
 #[cfg(feature = "goosemed")]
-fn goosemed_http_client_builder(
+async fn goosemed_http_client_builder(
     builder: reqwest::ClientBuilder,
     uri: &str,
 ) -> Result<reqwest::ClientBuilder, String> {
+    let approved = crate::goosemed::resolve_mcp_endpoint(uri).await?;
     let origin = url::Url::parse(uri)
         .map_err(|error| format!("invalid MCP URI: {error}"))?
         .origin();
     Ok(builder
         .no_proxy()
+        .resolve_to_addrs(&approved.host, &approved.addresses)
         .redirect(reqwest::redirect::Policy::custom(move |attempt| {
             if attempt.previous().len() >= 10 {
                 return attempt.error("too many redirects");
@@ -815,6 +817,7 @@ async fn connect_with_auth(
     #[cfg(feature = "goosemed")]
     {
         auth_client_builder = goosemed_http_client_builder(auth_client_builder, uri)
+            .await
             .map_err(ExtensionError::ConfigError)?;
     }
     let auth_http_client = auth_client_builder
@@ -1193,6 +1196,7 @@ async fn create_streamable_http_client(
     #[cfg(feature = "goosemed")]
     {
         http_client_builder = goosemed_http_client_builder(http_client_builder, uri)
+            .await
             .map_err(ExtensionError::ConfigError)?;
     }
     let http_client = http_client_builder
@@ -1478,14 +1482,6 @@ impl ExtensionManager {
         container: Option<&Container>,
         session_id: Option<&str>,
     ) -> ExtensionResult<()> {
-        #[cfg(feature = "goosemed")]
-        if !crate::goosemed::extension_is_allowed(&config) {
-            return Err(ExtensionError::ConfigError(format!(
-                "extension '{}' is not permitted by the GooseMED security policy",
-                config.name()
-            )));
-        }
-
         let sanitized_name = config.key();
 
         // Compare both the unresolved config (to detect structural changes like
@@ -1493,6 +1489,11 @@ impl ExtensionManager {
         // detect secret rotation where only keyring values changed). Only skip
         // restart if both match.
         let resolved_config = config.clone().resolve(Config::global()).await?;
+
+        #[cfg(feature = "goosemed")]
+        crate::goosemed::ensure_extension_allowed(&resolved_config)
+            .await
+            .map_err(ExtensionError::ConfigError)?;
 
         if let Some(existing) = self.extensions.lock().await.get(&sanitized_name) {
             if existing.config == config && existing.resolved_config == resolved_config {
@@ -1725,7 +1726,7 @@ impl ExtensionManager {
         info: Option<ServerInfo>,
     ) {
         #[cfg(feature = "goosemed")]
-        if !crate::goosemed::extension_is_allowed(&config) {
+        if !crate::goosemed::embedded_extension_is_allowed(&config) {
             return;
         }
 

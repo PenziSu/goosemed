@@ -18,6 +18,8 @@ import { useConfig } from '../ConfigContext';
 import { SearchView } from '../conversation/SearchView';
 import { getSearchShortcutText } from '../../utils/keyboardShortcuts';
 import { defineMessages, useIntl } from '../../i18n';
+import { toastError } from '../../toasts';
+import { normalizeAcpError } from '../../acp/errors';
 
 const i18n = defineMessages({
   heading: {
@@ -119,7 +121,10 @@ export default function ExtensionsView({
       // Trigger a refresh of the extensions list
       setRefreshKey((prevKey) => prevKey + 1);
     } catch (error) {
-      console.error('Failed to activate extension:', error);
+      toastError({
+        title: intl.formatMessage(i18n.addExtension),
+        msg: normalizeAcpError(error, 'Failed to add MCP Server').message,
+      });
       setRefreshKey((prevKey) => prevKey + 1);
     }
   };

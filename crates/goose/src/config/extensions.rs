@@ -143,13 +143,13 @@ pub fn get_extension_by_name(name: &str) -> Option<ExtensionConfig> {
     #[cfg(feature = "goosemed")]
     return crate::goosemed::fixed_extensions()
         .into_iter()
-        .find(|extension| extension.name() == name || extension.key() == name_to_key(name));
+        .find(|extension| extension.name() == name || extension.key() == name_to_key(name))
+        .or_else(|| get_extension_by_name_with_config(Config::global(), name));
 
     #[cfg(not(feature = "goosemed"))]
     get_extension_by_name_with_config(Config::global(), name)
 }
 
-#[cfg(not(feature = "goosemed"))]
 fn get_extension_by_name_with_config(config: &Config, name: &str) -> Option<ExtensionConfig> {
     let extensions = get_extensions_map_with_config(config);
     let key = name_to_key(name);
@@ -215,6 +215,14 @@ pub fn get_all_extension_names() -> Vec<String> {
 }
 
 pub fn is_extension_enabled(key: &str) -> bool {
+    #[cfg(feature = "goosemed")]
+    if crate::goosemed::fixed_extensions()
+        .iter()
+        .any(|extension| extension.key() == key)
+    {
+        return true;
+    }
+
     let extensions = get_extensions_map();
     extensions.get(key).map(|e| e.enabled).unwrap_or(false)
 }
@@ -233,7 +241,15 @@ pub fn configured_enabled_state(config: &Config, name: &str) -> Option<bool> {
 pub fn get_enabled_extensions() -> Vec<ExtensionConfig> {
     #[cfg(feature = "goosemed")]
     {
-        crate::goosemed::fixed_extensions()
+        let mut extensions = crate::goosemed::fixed_extensions();
+        extensions.extend(
+            get_all_extensions()
+                .into_iter()
+                .filter(|entry| entry.enabled)
+                .map(|entry| entry.config)
+                .filter(|config| !crate::goosemed::extension_uses_reserved_name(config)),
+        );
+        extensions
     }
 
     #[cfg(not(feature = "goosemed"))]
@@ -247,8 +263,15 @@ pub fn get_enabled_extensions() -> Vec<ExtensionConfig> {
 pub fn get_enabled_extensions_with_config(config: &Config) -> Vec<ExtensionConfig> {
     #[cfg(feature = "goosemed")]
     {
-        let _ = config;
-        crate::goosemed::fixed_extensions()
+        let mut extensions = crate::goosemed::fixed_extensions();
+        extensions.extend(
+            get_extensions_map_with_config(config)
+                .into_values()
+                .filter(|entry| entry.enabled)
+                .map(|entry| entry.config)
+                .filter(|config| !crate::goosemed::extension_uses_reserved_name(config)),
+        );
+        extensions
     }
 
     #[cfg(not(feature = "goosemed"))]
@@ -332,7 +355,7 @@ pub fn resolve_extensions_for_new_session(
     #[cfg(feature = "goosemed")]
     {
         let _ = (recipe_extensions, override_extensions);
-        crate::goosemed::fixed_extensions()
+        get_enabled_extensions()
     }
 
     #[cfg(not(feature = "goosemed"))]

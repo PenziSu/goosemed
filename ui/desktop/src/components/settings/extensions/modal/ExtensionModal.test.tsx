@@ -185,7 +185,7 @@ describe('ExtensionModal', () => {
     const initialData: ExtensionFormData = {
       name: '',
       description: '',
-      type: 'stdio', // Default type
+      type: 'streamable_http',
       cmd: '',
       endpoint: '',
       enabled: true,
@@ -213,6 +213,7 @@ describe('ExtensionModal', () => {
     const typeSelect = screen.getByRole('combobox');
     await user.click(typeSelect);
 
+    expect(screen.queryByText('Standard IO (STDIO)')).not.toBeInTheDocument();
     const httpOption = screen.getByText('Streamable HTTP');
     await user.click(httpOption);
 

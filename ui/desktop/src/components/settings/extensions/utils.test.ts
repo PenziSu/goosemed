@@ -37,7 +37,7 @@ describe('Extension Utils', () => {
       expect(defaultData).toEqual({
         name: '',
         description: '',
-        type: 'stdio',
+        type: 'streamable_http',
         cmd: '',
         endpoint: '',
         enabled: true,

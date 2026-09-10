@@ -636,8 +636,7 @@ async fn collect_extension_configs(
     disambiguate_stdio_extension_names(&mut all, &renameable)
         .map_err(ExtensionError::ConfigError)?;
 
-    let _ = all;
-    Ok(goose::goosemed::fixed_extensions())
+    Ok(all.into_iter().map(|(_, config)| config).collect())
 }
 
 async fn configure_session_prompts(

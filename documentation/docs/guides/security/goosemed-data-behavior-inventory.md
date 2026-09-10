@@ -7,7 +7,7 @@
 | ID | 行為 | 可能接觸的資料 | 保存位置或傳送目的地 | 狀態 |
 | --- | --- | --- | --- | --- |
 | D01 | 將對話送往語言模型 | 提示詞、工具結果、資料摘要 | 編譯時指定的院內模型 Endpoint | 已鎖定 `openai` 相容介面與 `gpt-oss-120b`，執行期設定無法覆寫 |
-| D02 | 透過 MCP 查詢並接收資料 | 查詢參數、IRB 範圍、病患資料 | 編譯時指定的 MCP Server 與目前專案目錄 | 已鎖定唯一 Streamable HTTP MCP，忽略工作階段與設定檔傳入的其他 MCP |
+| D02 | 透過 MCP 查詢並接收資料 | 查詢參數、IRB 範圍、病患資料 | 經設定且解析結果完全位於 `172.22.0.0/16` 的 MCP Server 與目前專案目錄 | 已允許新增、修改、停用與刪除 Streamable HTTP MCP；後端逐次驗證 IP 並固定 DNS 結果，其他傳輸與網段一律拒絕 |
 | D03 | 執行 Shell 與 Python | 命令、檔案內容、stdout、stderr | 子程序、檔案系統、網路 | macOS 已限制專案目錄並拒絕全部網路；Windows 與 Linux 在原生沙箱完成前不提供 Shell |
 | D04 | 使用結構化檔案工具 | 專案內 Excel、圖片與衍生資料 | 目前專案目錄 | 已阻擋絕對路徑、上一層與符號連結跳脫；ACP 的新增、載入、複製與切換目錄均由伺服器啟動目錄覆蓋 |
 | D05 | 保存對話工作階段 | 完整對話、工作目錄、模型與工具狀態 | 本機 SQLite | 保留，需納入磁碟加密、權限與清除政策 |
@@ -20,7 +20,7 @@
 | D12 | 傳送 Telemetry、OTEL 或追蹤資料 | 使用事件、錯誤、模型與工具欄位 | 原本的 PostHog、OTLP、Langfuse | 預設建置已排除 Telemetry、OTEL 與相關 Code Mode；即使誤開 telemetry feature，GooseMed 仍固定關閉 PostHog |
 | D13 | 分享或匯入 Nostr 工作階段 | 加密後的完整對話工作階段 | Nostr relay | Rust 預設建置已排除，桌面入口待移除 |
 | D14 | 設定其他 Provider 與 OAuth | Endpoint、模型名稱、憑證與登入狀態 | 任意 Provider 與外部瀏覽器 | 已阻擋 UI、CLI、ACP 與設定檔覆寫，只建立固定 Provider |
-| D15 | 安裝或執行 extension、plugin、hook 與任意 MCP | 提示詞、工具輸入輸出與程序環境 | 子程序、stdio、HTTP 或外部服務 | 已阻擋新增、刪除與啟停介面，只載入受限 developer 工具與固定 MCP；plugin 與 hook 不載入 |
+| D15 | 安裝或執行 extension、plugin、hook 與任意 MCP | 提示詞、工具輸入輸出與程序環境 | 子程序、stdio、HTTP 或外部服務 | 只保留受限 developer 工具與受控內網 Streamable HTTP MCP；設定介面可管理 MCP，但後端拒絕 stdio、Unix socket、外網 IP、混合 DNS 結果、代理與跨來源重新導向；plugin 與 hook 不載入 |
 | D16 | 使用 dictation、gateway 或模型下載 | 語音、訊息或模型請求 | 語音 Provider、Telegram、Hugging Face 等服務 | GooseMed ACP 拒絕 dictation，CLI 不提供 gateway，預設建置不含模型下載功能 |
 | D17 | 開啟外部連結或載入遠端內容 | 連結、對話內容、MCP App 與 recipe | 系統瀏覽器、Electron、GitHub 或其他網路目的地 | 桌面外部連結一律拒絕；Electron 強制直連並只允許自身與 loopback；MCP App 不接受外部網域；recipe 只從本機載入；ACP 只綁定 `127.0.0.1`、強制 Secret 且拒絕額外 Origin |
 | D18 | 匯出、備份或複製資料 | 對話與研究資料集 | 使用者選定檔案、剪貼簿或備份系統 | 保留人工操作，但需限制匯出路徑與部署政策 |
@@ -51,4 +51,4 @@
 
 ## GooseMed 編譯設定
 
-LLM Endpoint 已固定為院內 vLLM 的 `http://172.22.135.127:8000/v1`，模型固定為 `gpt-oss-120b`，無法由編譯環境、執行期環境變數、設定檔或啟動參數更換。`GOOSEMED_MCP_ENDPOINT` 只在編譯時讀取；若未指定，開發建置使用 `http://127.0.0.1:3001/mcp`。正式建置必須由受控建置流程注入院內 MCP 位址。
+LLM Endpoint 已固定為院內 vLLM 的 `http://172.22.135.127:8000/v1`，模型固定為 `gpt-oss-120b`，無法由編譯環境、執行期環境變數、設定檔或啟動參數更換。MCP Server 由桌面設定管理，但只能使用 Streamable HTTP，而且主機名稱的全部 A 與 AAAA 解析結果都必須位於 IPv4 `172.22.0.0/16`。GooseMED 不使用反向 DNS 作為授權依據，也不接受混合內外網解析結果。

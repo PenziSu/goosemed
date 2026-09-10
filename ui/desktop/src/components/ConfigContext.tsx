@@ -7,7 +7,6 @@ import {
   removeConfigExtension,
   setConfigExtensionEnabled,
 } from '../acp/extensions';
-import { pruneDeprecatedBundledExtensions, syncBundledExtensions } from './settings/extensions';
 import { nameToKey } from './settings/extensions/utils';
 import type { ExtensionConfig } from '../types/extensions';
 import type { ProviderDetails } from '../types/providers';
@@ -171,31 +170,7 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
       // Load extensions
       try {
         const extensionsResponse = await getConfiguredExtensions();
-        let extensions = extensionsResponse.extensions;
-
-        // Always sync bundled extensions from bundled-extensions.json
-        // This ensures:
-        // 1. Fresh installs get the default extensions (developer, computercontroller, etc.)
-        // 2. Existing users get NEW bundled extensions added in subsequent releases
-        // The syncBundledExtensions function skips extensions that already exist and are marked as bundled
-        // Platform extensions (code_execution, todo, etc.) are handled by the backend
-        const addExtensionForSync = async (
-          _name: string,
-          config: ExtensionConfig,
-          enabled: boolean
-        ) => {
-          await addConfigExtension(config, enabled);
-        };
-        const removeExtensionForSync = async (configKey: string) => {
-          await removeConfigExtension(configKey);
-        };
-        extensions = await pruneDeprecatedBundledExtensions(extensions, removeExtensionForSync);
-        await syncBundledExtensions(extensions, addExtensionForSync);
-        // Reload extensions after sync
-        const refreshedResponse = await getConfiguredExtensions();
-        extensions = refreshedResponse.extensions;
-
-        setExtensionsList(extensions);
+        setExtensionsList(extensionsResponse.extensions);
         setExtensionWarnings(extensionsResponse.warnings || []);
       } catch (error) {
         console.error('Failed to load extensions:', error);

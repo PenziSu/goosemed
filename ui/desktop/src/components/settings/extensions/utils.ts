@@ -50,7 +50,7 @@ export function getDefaultFormData(): ExtensionFormData {
   return {
     name: '',
     description: '',
-    type: 'stdio',
+    type: 'streamable_http',
     cmd: '',
     endpoint: '',
     enabled: true,

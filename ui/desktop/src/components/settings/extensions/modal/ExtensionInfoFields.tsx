@@ -98,11 +98,7 @@ export default function ExtensionInfoFields({
             value={{
               value: type,
               label:
-                type === 'stdio'
-                  ? intl.formatMessage(i18n.typeStdio)
-                  : type === 'streamable_http'
-                    ? intl.formatMessage(i18n.typeHttp)
-                    : type.toUpperCase(),
+                type === 'streamable_http' ? intl.formatMessage(i18n.typeHttp) : type.toUpperCase(),
             }}
             onChange={(newValue: unknown) => {
               const option = newValue as { value: string; label: string } | null;
@@ -111,7 +107,6 @@ export default function ExtensionInfoFields({
               }
             }}
             options={[
-              { value: 'stdio', label: intl.formatMessage(i18n.typeStandardIo) },
               { value: 'streamable_http', label: intl.formatMessage(i18n.typeStreamableHttp) },
             ]}
             isSearchable={false}

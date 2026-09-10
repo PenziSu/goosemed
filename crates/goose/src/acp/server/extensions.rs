@@ -9,9 +9,9 @@ impl GooseAcpAgent {
         &self,
         req: AddSessionExtensionRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
-        ensure_extension_mutation_allowed()?;
         let session_id = &req.session_id;
         let config = goose_extension_to_config_without_secrets(req.extension)?;
+        ensure_goosemed_extension_allowed(&config).await?;
         let agent = self.get_session_agent(&req.session_id).await?;
         agent
             .add_extension(config, session_id)
@@ -24,7 +24,6 @@ impl GooseAcpAgent {
         &self,
         req: RemoveSessionExtensionRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
-        ensure_extension_mutation_allowed()?;
         let session_id = &req.session_id;
         let agent = self.get_session_agent(&req.session_id).await?;
         let removed = agent
@@ -65,8 +64,8 @@ impl GooseAcpAgent {
         &self,
         req: AddConfigExtensionRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
-        ensure_extension_mutation_allowed()?;
         let conversion = goose_extension_to_config(req.extension)?;
+        ensure_goosemed_extension_allowed(&conversion.config).await?;
 
         Config::global()
             .set_secret_values(&conversion.secret_updates)
@@ -83,7 +82,6 @@ impl GooseAcpAgent {
         &self,
         req: RemoveConfigExtensionRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
-        ensure_extension_mutation_allowed()?;
         crate::config::extensions::remove_extension(&req.config_key);
         Ok(EmptyResponse {})
     }
@@ -92,7 +90,17 @@ impl GooseAcpAgent {
         &self,
         req: SetConfigExtensionEnabledRequest,
     ) -> Result<EmptyResponse, agent_client_protocol::Error> {
-        ensure_extension_mutation_allowed()?;
+        if req.enabled {
+            let config = crate::config::extensions::get_all_extensions()
+                .into_iter()
+                .find(|entry| entry.config.key() == req.config_key)
+                .map(|entry| entry.config)
+                .ok_or_else(|| {
+                    agent_client_protocol::Error::invalid_params()
+                        .data(format!("Extension '{}' not found", req.config_key))
+                })?;
+            ensure_goosemed_extension_allowed(&config).await?;
+        }
         let updated =
             crate::config::extensions::set_extension_enabled(&req.config_key, req.enabled);
         if !updated {
@@ -125,15 +133,19 @@ impl GooseAcpAgent {
     }
 }
 
-fn ensure_extension_mutation_allowed() -> Result<(), agent_client_protocol::Error> {
+async fn ensure_goosemed_extension_allowed(
+    config: &ExtensionConfig,
+) -> Result<(), agent_client_protocol::Error> {
     #[cfg(feature = "goosemed")]
     {
-        Err(agent_client_protocol::Error::invalid_params()
-            .data("GooseMED extensions are fixed at build time"))
+        crate::goosemed::ensure_extension_allowed(config)
+            .await
+            .map_err(|message| agent_client_protocol::Error::invalid_params().data(message))
     }
 
     #[cfg(not(feature = "goosemed"))]
     {
+        let _ = config;
         Ok(())
     }
 }
@@ -429,9 +441,15 @@ mod tests {
     use std::collections::HashMap;
 
     #[cfg(feature = "goosemed")]
-    #[test]
-    fn goosemed_rejects_extension_mutation() {
-        assert!(ensure_extension_mutation_allowed().is_err());
+    #[tokio::test]
+    async fn goosemed_only_accepts_internal_streamable_http_extensions() {
+        let internal =
+            ExtensionConfig::streamable_http("irb", "http://172.22.50.25:3001/mcp", "", 300_u64);
+        let external =
+            ExtensionConfig::streamable_http("external", "https://1.1.1.1/mcp", "", 300_u64);
+
+        assert!(ensure_goosemed_extension_allowed(&internal).await.is_ok());
+        assert!(ensure_goosemed_extension_allowed(&external).await.is_err());
     }
 
     fn builtin_config(name: &str) -> ExtensionConfig {

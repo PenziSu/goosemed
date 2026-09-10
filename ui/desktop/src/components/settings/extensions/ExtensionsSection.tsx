@@ -16,6 +16,8 @@ import {
 
 import { activateExtensionDefault, deleteExtension, toggleExtensionDefault } from './index';
 import type { ExtensionConfig } from '../../../types/extensions';
+import { toastError } from '../../../toasts';
+import { normalizeAcpError } from '../../../acp/errors';
 
 const i18n = defineMessages({
   addCustomExtension: {
@@ -117,11 +119,19 @@ export default function ExtensionsSection({
     const toggleDirection = extensionConfig.enabled ? 'toggleOff' : 'toggleOn';
     const configKey = extensionConfig.configKey ?? nameToKey(extensionConfig.name);
 
-    await toggleExtensionDefault({
-      toggle: toggleDirection,
-      extensionConfig: extensionConfig,
-      setEnabled: (enabled) => setExtensionEnabled(configKey, enabled),
-    });
+    try {
+      await toggleExtensionDefault({
+        toggle: toggleDirection,
+        extensionConfig: extensionConfig,
+        setEnabled: (enabled) => setExtensionEnabled(configKey, enabled),
+      });
+    } catch (error) {
+      toastError({
+        title: intl.formatMessage(i18n.updateExtension),
+        msg: normalizeAcpError(error, 'Failed to update MCP Server').message,
+      });
+      throw error;
+    }
 
     await fetchExtensions();
     return true;
@@ -143,7 +153,10 @@ export default function ExtensionsSection({
         extensionConfig: extensionConfig,
       });
     } catch (error) {
-      console.error('Failed to add extension:', error);
+      toastError({
+        title: intl.formatMessage(i18n.addExtension),
+        msg: normalizeAcpError(error, 'Failed to add MCP Server').message,
+      });
     } finally {
       await fetchExtensions();
       if (onModalClose) {
@@ -172,7 +185,10 @@ export default function ExtensionsSection({
       }
       await addExtension(extensionConfig.name, extensionConfig, formData.enabled);
     } catch (error) {
-      console.error('Failed to update extension:', error);
+      toastError({
+        title: intl.formatMessage(i18n.updateExtension),
+        msg: normalizeAcpError(error, 'Failed to update MCP Server').message,
+      });
     } finally {
       await fetchExtensions();
     }
@@ -187,7 +203,10 @@ export default function ExtensionsSection({
         removeFromConfig: removeExtension,
       });
     } catch (error) {
-      console.error('Failed to delete extension:', error);
+      toastError({
+        title: intl.formatMessage(i18n.updateExtension),
+        msg: normalizeAcpError(error, 'Failed to remove MCP Server').message,
+      });
     } finally {
       await fetchExtensions();
     }

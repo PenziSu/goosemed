@@ -1,23 +1,13 @@
 {
   "project": "GooseMED",
   "branch": "security/medical-data-hardening-v1",
-  "updatedAt": "2026-09-10T01:53:04.625Z",
+  "updatedAt": "2026-09-10T06:27:30.000Z",
   "columns": [
     {
       "id": "backlog",
       "title": "待盤點",
       "accent": "bg-slate-400",
-      "cards": [
-        {
-          "id": "task-1789005184625",
-          "title": "恢復MCP Server 設定",
-          "summary": "恢復原廠 MCP Server 設定。增加檢查機制，僅限 172.22.0.0/16 網段的 MCP Server URL 可以設定，允許 Domain Name ，可是DNS反解的IP也必須是 172.22.0.0/16 網域。",
-          "acceptance": "確保只有 172.22.0.0/16 網段的 MCP Server 可以設定在 GooseMED 上。",
-          "details": "",
-          "priority": "P1",
-          "updatedAt": "2026-09-10T01:53:04.625Z"
-        }
-      ]
+      "cards": []
     },
     {
       "id": "ready",
@@ -42,6 +32,24 @@
       "title": "完成",
       "accent": "bg-teal-600",
       "cards": [
+        {
+          "id": "task-1789005184625",
+          "title": "恢復 MCP Server 設定",
+          "summary": "恢復 MCP 管理功能，同時由後端強制限定 172.22.0.0/16，異常設定可查看錯誤、停用、修改或刪除。",
+          "acceptance": "確保只有 172.22.0.0/16 網段的 MCP Server 可以設定在 GooseMED 上。",
+          "details": "移除原本寫死的 localhost MCP，恢復桌面與 ACP 的新增、修改、啟用、停用及刪除功能。介面只提供 Streamable HTTP，新增與啟用時由後端解析 URL；直接 IP 或網域名稱的全部 DNS A、AAAA 結果都必須是 IPv4 172.22.0.0/16。連線使用已驗證並固定的 DNS 結果，停用系統 Proxy，只允許同來源重新導向，避免 DNS rebinding 與代理繞過。stdio、Unix socket、IPv6、loopback、其他內外網、混合 DNS、URL 內嵌帳密及 Developer 保留名稱均被拒絕。連線或政策錯誤會顯示在介面，失效設定仍可直接停用或刪除。15 項 GooseMED 安全測試、803 項桌面測試、Rust 編譯、Clippy、型別、ESLint、語系與 M3 封裝啟動檢查全數通過。",
+          "priority": "P1",
+          "updatedAt": "2026-09-10T06:27:30.000Z"
+        },
+        {
+          "id": "windows-build-guide",
+          "title": "建立 GooseMED Windows 編譯說明",
+          "summary": "提供在 Windows 環境從 GitHub 下載分支並編譯 GooseMED 的可重現步驟。",
+          "acceptance": "說明涵蓋必要工具、clone、checkout、編譯、產物位置、簽章差異與常見錯誤。",
+          "details": "新增繁體中文 Windows 編譯說明，涵蓋 Git、Node.js 24、pnpm 10.30.3、Rust MSVC、Visual Studio 2022 C++ Build Tools 與 Windows SDK，並列出 clone、指定安全分支、commit 核對、編譯、程式與安裝檔位置、SmartScreen、正式簽章及常見錯誤。同步更新 PowerShell 腳本，固定 x86_64-pc-windows-msvc target、frozen lockfile，並在 GooseMED 或後端仍執行時拒絕覆寫。macOS 無法實際驗證 Windows MSVC 與 Electron 安裝檔，最終 Windows 原生建置仍須依說明執行。",
+          "priority": "P1",
+          "updatedAt": "2026-09-10T06:27:30.000Z"
+        },
         {
           "id": "rename-desktop-goosemed",
           "title": "將桌面應用識別改為 GooseMED",
@@ -143,10 +151,10 @@
         },
         {
           "id": "fixed-provider-mcp",
-          "title": "鎖定模型與 MCP",
-          "summary": "模型固定為 gpt-oss-120b，僅保留編譯時指定的 LLM 與 IRB MCP Endpoint。",
-          "acceptance": "使用者無法從 UI、設定檔或啟動參數改用其他服務。",
-          "details": "GooseMed 只建立固定 OpenAI 相容 Provider 與單一 Streamable HTTP MCP。阻擋 UI、CLI、ACP、工作階段與設定檔新增或切換 Provider、MCP、stdio extension、plugin 及 hook，固定 MCP Client 同樣採用直連與同源重新導向政策。",
+          "title": "鎖定模型與 MCP 安全邊界",
+          "summary": "模型固定為 gpt-oss-120b；MCP 只能使用經驗證的院內 172.22.0.0/16 Streamable HTTP 服務。",
+          "acceptance": "使用者無法改用其他模型服務，MCP 無法連往允許網段以外或使用其他傳輸。",
+          "details": "GooseMED 只建立固定 OpenAI 相容 Provider，阻擋 UI、CLI、ACP、工作階段與設定檔切換 Provider 或模型。MCP 初版採用編譯時固定單一 Endpoint，後續恢復受控設定功能；目前只允許解析結果完全位於 172.22.0.0/16 的 Streamable HTTP MCP，仍拒絕 stdio extension、plugin 與 hook。",
           "priority": "P0",
           "updatedAt": "2026-09-09T03:36:22.000Z"
         }
