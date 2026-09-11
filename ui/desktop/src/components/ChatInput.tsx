@@ -11,6 +11,7 @@ import debounce from 'lodash/debounce';
 import { LocalMessageStorage } from '../utils/localMessageStorage';
 import { DirSwitcher } from './bottom_menu/DirSwitcher';
 import { GitBranchIndicator } from './GitBranchIndicator';
+import { BottomMenuExtensionSelection } from './bottom_menu/BottomMenuExtensionSelection';
 import { cn } from '../utils';
 import { AlertType, useAlerts } from './alerts';
 import { useModelAndProvider } from './ModelAndProviderContext';
@@ -231,8 +232,8 @@ export default function ChatInput({
   sessionLoaded: _sessionLoaded,
   workingDir,
   latestInference: _latestInference,
-  nextChatExtensionDraft: _nextChatExtensionDraft,
-  onNextChatExtensionDraftChange: _onNextChatExtensionDraftChange,
+  nextChatExtensionDraft,
+  onNextChatExtensionDraftChange,
 }: ChatInputProps) {
   const [_value, setValue] = useState(initialValue);
   const [displayValue, setDisplayValue] = useState(initialValue); // For immediate visual feedback
@@ -1707,6 +1708,13 @@ export default function ChatInput({
               totalTokens={totalTokens || 0}
               tokenLimit={tokenLimit}
               alerts={alerts}
+            />
+
+            {/* Right: extension selector */}
+            <BottomMenuExtensionSelection
+              sessionId={sessionId}
+              nextChatExtensionDraft={nextChatExtensionDraft}
+              onNextChatExtensionDraftChange={onNextChatExtensionDraftChange}
             />
 
             {/* Right: diagnostics */}

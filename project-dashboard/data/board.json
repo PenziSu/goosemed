@@ -1,7 +1,7 @@
 {
   "project": "GooseMED",
   "branch": "security/medical-data-hardening-v1",
-  "updatedAt": "2026-09-10T14:31:32.000Z",
+  "updatedAt": "2026-09-11T00:21:06.000Z",
   "columns": [
     {
       "id": "backlog",
@@ -29,11 +29,11 @@
         {
           "id": "task-1789005184625",
           "title": "恢復 MCP Server 設定",
-          "summary": "恢復 Goose 原生內建 Extension；只有使用者設定的遠端 MCP 強制限定 172.22.0.0/16。",
-          "acceptance": "原生內建 Extension 可正常啟用，遠端 MCP 仍只接受解析結果全部位於 172.22.0.0/16 的 Streamable HTTP。",
-          "details": "恢復 Desktop 啟動時同步 Developer、Computer Controller、Auto Visualiser、Memory 與 Tutorial 的原生流程，並恢復已設定之內建與 Platform Extension 載入。GooseMED 使用明確內建名稱白名單，內建項目不做 IP 檢查；只有 Streamable HTTP 遠端 MCP 解析 DNS 並強制全部位於 172.22.0.0/16。任意 stdio、Unix socket、未知內建項目、冒用內建名稱與非院內遠端 MCP 仍被拒絕。Rust 政策 4 項、設定 15 項、GooseMED 流程 11 項、ACP 新增測試與 Desktop 805 項測試通過，Clippy、typecheck、ESLint、i18n、ARM64、簽章與 ZIP 驗證通過；M3 實際啟動後已確認四個 Goose MCP 內建項目寫入設定。",
+          "summary": "恢復 Goose 原生內建 Extension，以及 Chat 輸入框內逐一啟用或停用 MCP 的按鈕。",
+          "acceptance": "Chat 輸入框顯示 MCP 開關按鈕，可控制目前工作階段的 Extension；內建 Extension 可用，遠端 MCP 仍只接受 172.22.0.0/16。",
+          "details": "恢復原始 Goose 在 Chat 輸入框下方的 Extension 選擇器。按鈕會接收目前 session ID，透過原有 ACP 流程啟用或停用該工作階段的 MCP Server；新對話也保留 Extension 草稿設定。院內 172.22.0.0/16 遠端 MCP 限制與內建 Extension 白名單均未放寬。新增 ChatInput 接線回歸測試，連同原有切換測試共 5 項通過；Desktop 完整測試 97 個檔案、806 項全數通過，typecheck、ESLint、i18n 與 Prettier 檢查通過。Apple Silicon app 與 ZIP 已重編，arm64 架構、ad hoc 簽章與 ZIP 完整性驗證通過，等待實際畫面確認。",
           "priority": "P1",
-          "updatedAt": "2026-09-10T14:31:32.000Z"
+          "updatedAt": "2026-09-11T00:21:06.000Z"
         }
       ]
     },
